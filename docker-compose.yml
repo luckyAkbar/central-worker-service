@@ -6,11 +6,9 @@ services:
     build: .
     command: "./main server"
     ports:
-      - "9090:9090"
+      - "9095:9095"
   
   worker:
     container_name: "central_worker_service_worker"
     build: .
     command: "./main worker"
-    ports:
-      - "9091:9091"
