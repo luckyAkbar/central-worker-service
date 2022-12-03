@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/sendinblue/APIv3-go-library/lib"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -22,10 +24,12 @@ func init() {
 	}
 }
 
+// Env returns server env
 func Env() string {
 	return viper.GetString("server.env")
 }
 
+// LogLevel returns server log level
 func LogLevel() string {
 	return viper.GetString("server.log.level")
 }
@@ -80,4 +84,77 @@ func ServerPort() string {
 	}
 
 	return fmt.Sprintf(":%s", cfg)
+}
+
+// WorkerConcurrency return worker concurrency defined on config file. default to 10
+func WorkerConcurrency() int {
+	cfg := viper.GetInt("worker.concurrency")
+
+	if cfg == 0 {
+		return 10
+	}
+
+	return cfg
+}
+
+// MailingTaskMaxRetry max retry for mailing task. default to 5
+func MailingTaskMaxRetry() int {
+	cfg := viper.GetInt("worker.task.mailing.max_retry")
+
+	if cfg == 0 {
+		return 5
+	}
+
+	return cfg
+}
+
+// MailingTaskTimeoutSeconds timeout for mailing task. default to 5s
+func MailingTaskTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.mailing.timeout_seconds")
+
+	if cfg == 0 {
+		return time.Second * 5
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+// MailUpdatingTaskMaxRetry max retry for mail updating task
+func MailUpdatingTaskMaxRetry() int {
+	cfg := viper.GetInt("worker.task.mail_updating.max_retry")
+
+	if cfg == 0 {
+		return 5
+	}
+
+	return cfg
+}
+
+// MailUpdatingTaskTimeoutSeconds timeout for mail updating task
+func MailUpdatingTaskTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.mail_updating.timeout_seconds")
+
+	if cfg == 0 {
+		return time.Second * 5
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+// SendinblueApiKey get API key for send in blue
+func SendinblueAPIKey() string {
+	return viper.GetString("sendinblue.api_key")
+}
+
+// SendInBlueSender generate sendinblue sender using configured sender name and sender email
+func SendInBlueSender() *lib.SendSmtpEmailSender {
+	return &lib.SendSmtpEmailSender{
+		Name:  viper.GetString("sendinblue.sender.name"),
+		Email: viper.GetString("sendinblue.sender.email"),
+	}
+}
+
+// WorkerBrokerRedisHost redis host for worker task broker
+func WorkerBrokerRedisHost() string {
+	return viper.GetString("redis.worker_broker_host")
 }
