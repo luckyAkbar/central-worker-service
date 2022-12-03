@@ -8,6 +8,7 @@ import (
 	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/db"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
+	"github.com/luckyAkbar/central-worker-service/internal/middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +35,7 @@ func server(c *cobra.Command, args []string) {
 	HTTPServer := echo.New()
 
 	HTTPServer.Pre(echoMiddleware.AddTrailingSlash())
-	HTTPServer.Use(echoMiddleware.RequestID())
+	HTTPServer.Use(middleware.RequestID())
 	HTTPServer.Use(echoMiddleware.Logger())
 	HTTPServer.Use(echoMiddleware.Recover())
 	HTTPServer.Use(echoMiddleware.CORS())
