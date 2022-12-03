@@ -1,0 +1,39 @@
+server:
+  env: "development"
+  port: "8080"
+  log:
+    level: "INFO"
+    sentry:
+      dsn: ""
+
+worker:
+  concurrency: 5
+  task:
+    mailing:
+      max_retry: 10,
+      timeout_seconds: 10
+    mail_updating:
+      max_retry: 5
+      timeout_seconds: 10
+
+
+sendinblue:
+  api_key: ""
+  sender:
+    email: "no-reply@mail.cd"
+    name: "central worker service"
+
+postgres:
+  host: ""
+  db: ""
+  use"
+  port: "5432"
+  ssl_mode: "disable"
+
+redis:
+  addr: ""
+  password: ""
+  db: 5
+  min: 1
+  max: 5
+  worker_broker_host: "redis://mm/2"

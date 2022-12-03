@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  server:
+    container_name: "central_worker_service_server"
+    build: .
+    command: "./main server"
+    ports:
+      - "9090:9090"
+  
+  worker:
+    container_name: "central_worker_service_worker"
+    build: .
+    command: "./main worker"
+    ports:
+      - "9091:9091"
