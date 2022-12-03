@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/hibiken/asynq"
@@ -81,6 +82,12 @@ func (th *taskHandler) HandleMailingTask(ctx context.Context, t *asynq.Task) err
 	}
 
 	logger.Info("received result from sibClient send email: ", utils.Dump(result))
+
+	mail.Status = model.MailStatusSuccess
+	mail.Metadata = &sql.NullString{
+		String: utils.Dump(result),
+		Valid:  true,
+	}
 
 	if err := th.workerClient.RegisterMailUpdatingTask(ctx, mail, model.PriorityHigh); err != nil {
 		// if err here, just report and forget

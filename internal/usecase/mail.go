@@ -50,9 +50,11 @@ func (u *mailUsecase) Enqueue(ctx context.Context, input *model.MailingInput) (*
 		Status:      model.MailStatusOnProgress,
 		Cc: &sql.NullString{
 			String: utils.Dump(input.Cc),
+			Valid:  true,
 		},
 		Bcc: &sql.NullString{
 			String: utils.Dump(input.Bcc),
+			Valid:  true,
 		},
 	}
 
