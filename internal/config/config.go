@@ -141,7 +141,7 @@ func MailUpdatingTaskTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
-// SendinblueApiKey get API key for send in blue
+// SendinblueAPIKey get API key for send in blue
 func SendinblueAPIKey() string {
 	return viper.GetString("sendinblue.api_key")
 }

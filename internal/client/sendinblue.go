@@ -11,10 +11,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// SIB send in blue client
 type SIB struct {
 	client *sendinblue.APIClient
 }
 
+// NewSendInBlueClient creates a new SIB client
 func NewSendInBlueClient() *SIB {
 	cfg := sendinblue.NewConfiguration()
 	cfg.AddDefaultHeader("api-key", config.SendinblueAPIKey())
@@ -24,6 +26,7 @@ func NewSendInBlueClient() *SIB {
 	}
 }
 
+// SendEmail sends an email. error if status code from sendinblue server is not 201
 func (s *SIB) SendEmail(ctx context.Context, body sendinblue.SendSmtpEmail) (sendinblue.CreateSmtpEmail, error) {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":  helper.DumpContext(ctx),

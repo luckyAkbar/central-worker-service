@@ -20,6 +20,7 @@ type taskHandler struct {
 	mailRepo     model.MailRepository
 }
 
+// NewTaskHandler creates a new task handler
 func NewTaskHandler(sibClient *client.SIB, mailRepo model.MailRepository, workerClient model.WorkerClient) model.TaskHandler {
 	return &taskHandler{
 		sibClient:    sibClient,
@@ -28,6 +29,8 @@ func NewTaskHandler(sibClient *client.SIB, mailRepo model.MailRepository, worker
 	}
 }
 
+// HandleMailingTask send email using sendinblue client. If success, will register
+// task to update mail record
 func (th *taskHandler) HandleMailingTask(ctx context.Context, t *asynq.Task) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":     helper.DumpContext(ctx),
@@ -89,6 +92,7 @@ func (th *taskHandler) HandleMailingTask(ctx context.Context, t *asynq.Task) err
 	return nil
 }
 
+// HandleMailUpdatingTask handle mail updating task
 func (th *taskHandler) HandleMailUpdatingTask(ctx context.Context, t *asynq.Task) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":     helper.DumpContext(ctx),

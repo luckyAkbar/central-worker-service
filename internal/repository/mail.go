@@ -14,12 +14,14 @@ type mailRepo struct {
 	db *gorm.DB
 }
 
+// NewMailRepository creates a new MailRepository
 func NewMailRepository(db *gorm.DB) model.MailRepository {
 	return &mailRepo{
 		db,
 	}
 }
 
+// Create create mail record
 func (r *mailRepo) Create(ctx context.Context, mail *model.Mail) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":  helper.DumpContext(ctx),
@@ -38,6 +40,7 @@ func (r *mailRepo) Create(ctx context.Context, mail *model.Mail) error {
 	return nil
 }
 
+// Update update mail record
 func (r *mailRepo) Update(ctx context.Context, mail *model.Mail) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":  helper.DumpContext(ctx),

@@ -25,6 +25,7 @@ type worker struct {
 	server *asynq.Server
 }
 
+// NewClient create a new worker client
 func NewClient(redisHost string) (model.WorkerClient, error) {
 	redisOpts, err := asynq.ParseRedisURI(redisHost)
 	if err != nil {
@@ -41,6 +42,7 @@ func NewClient(redisHost string) (model.WorkerClient, error) {
 	}, nil
 }
 
+// NewServer creates a new worker server
 func NewServer(redisHost string, th model.TaskHandler) (model.WorkerServer, error) {
 	registerTask(th)
 
@@ -73,6 +75,7 @@ func NewServer(redisHost string, th model.TaskHandler) (model.WorkerServer, erro
 	}, nil
 }
 
+// Start start worker server
 func (w *worker) Start() error {
 	logrus.Info("starting worker...")
 	if err := w.server.Run(mux); err != nil {
@@ -85,6 +88,7 @@ func (w *worker) Start() error {
 	return nil
 }
 
+// Stop stop worker server
 func (w *worker) Stop() {
 	logrus.Info("stopping worker...")
 	if w.client != nil {
@@ -98,6 +102,7 @@ func (w *worker) Stop() {
 	logrus.Info("worker stopped.")
 }
 
+// RegisterMailingTask register a mailing task
 func (w *worker) RegisterMailingTask(ctx context.Context, input *model.Mail, queue model.Priority) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":   helper.DumpContext(ctx),
@@ -131,6 +136,7 @@ func (w *worker) RegisterMailingTask(ctx context.Context, input *model.Mail, que
 	return nil
 }
 
+// RegisterMailUpdatingTask register mail update task
 func (w *worker) RegisterMailUpdatingTask(ctx context.Context, mail *model.Mail, queue model.Priority) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":  helper.DumpContext(ctx),

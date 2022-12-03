@@ -18,6 +18,7 @@ func WrapCloser(closeFn func() error) {
 	}
 }
 
+// GetRequestIDFromCtx self explained
 func GetRequestIDFromCtx(ctx context.Context) string {
 	id, ok := ctx.Value(model.ReqIDCtxKey).(string)
 	if !ok {
@@ -47,7 +48,7 @@ func DumpContext(ctx context.Context) string {
 	return string(v)
 }
 
-// GenerateRequestID generate request ID using UUID v4 and stripping the '-'
+// GenerateID generate ID using UUID v4 and stripping the '-'
 func GenerateID() string {
 	id := uuid.New()
 	return strings.ReplaceAll(id.String(), "-", "")

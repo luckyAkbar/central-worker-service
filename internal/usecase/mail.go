@@ -16,6 +16,7 @@ type mailUsecase struct {
 	workerClient model.WorkerClient
 }
 
+// NewMailUsecase creates a new MailUsecase
 func NewMailUsecase(repo model.MailRepository, workerClient model.WorkerClient) model.MailUsecase {
 	return &mailUsecase{
 		repo,
@@ -23,6 +24,7 @@ func NewMailUsecase(repo model.MailRepository, workerClient model.WorkerClient) 
 	}
 }
 
+// Enqueue create mail record and send task to worker
 func (u *mailUsecase) Enqueue(ctx context.Context, input *model.MailingInput) (*model.Mail, model.UsecaseError) {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":   helper.DumpContext(ctx),

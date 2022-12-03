@@ -14,12 +14,14 @@ import (
 // MailStatus is the status of a mail
 type MailStatus string
 
+// list mail status
 var (
 	MailStatusOnProgress MailStatus = "ON_PROGRESS"
 	MailStatusSuccess    MailStatus = "SUCCESS"
 	MailStatusFailed     MailStatus = "FAILED"
 )
 
+// MailingInput input to create mailing list
 type MailingInput struct {
 	To          []lib.SendSmtpEmailTo  `json:"to" validate:"required"`
 	Cc          []lib.SendSmtpEmailCc  `json:"cc,omitempty"`
@@ -28,10 +30,12 @@ type MailingInput struct {
 	Subject     string                 `json:"subject" validate:"required"`
 }
 
+// Validate validate struct
 func (mi *MailingInput) Validate() error {
 	return validator.Struct(mi)
 }
 
+// Mail represents a database table mails
 type Mail struct {
 	ID string `json:"id"`
 
@@ -49,6 +53,7 @@ type Mail struct {
 	Metadata    *sql.NullString `json:"metadata,omitempty"`
 }
 
+// SendInBlueTo get send in blue SendSmtpEmailTo
 func (m *Mail) SendInBlueTo() ([]lib.SendSmtpEmailTo, error) {
 	logrus.Info("converting string to []lib.SendSmtpEmailTo")
 
@@ -63,6 +68,7 @@ func (m *Mail) SendInBlueTo() ([]lib.SendSmtpEmailTo, error) {
 	return to, nil
 }
 
+// SendInBlueCc get send in blue SendSmtpEmailCc
 func (m *Mail) SendInBlueCc() (cc []lib.SendSmtpEmailCc, err error) {
 	logrus.Info("converting string to []lib.SendSmtpEmailCc")
 
@@ -80,6 +86,7 @@ func (m *Mail) SendInBlueCc() (cc []lib.SendSmtpEmailCc, err error) {
 	return cc, nil
 }
 
+// SendInBlueBcc get send in blue SendSmtpEmailBcc
 func (m *Mail) SendInBlueBcc() (bcc []lib.SendSmtpEmailBcc, err error) {
 	logrus.Info("converting string to []lib.SendSmtpEmailBcc")
 
@@ -97,10 +104,12 @@ func (m *Mail) SendInBlueBcc() (bcc []lib.SendSmtpEmailBcc, err error) {
 	return bcc, nil
 }
 
+// MailUsecase usecase for mail
 type MailUsecase interface {
 	Enqueue(ctx context.Context, input *MailingInput) (*Mail, UsecaseError)
 }
 
+// MailRepository repository for mail
 type MailRepository interface {
 	Create(ctx context.Context, mail *Mail) error
 	Update(ctx context.Context, mail *Mail) error

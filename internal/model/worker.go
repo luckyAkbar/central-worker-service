@@ -35,12 +35,12 @@ type TaskOption struct {
 
 // defined option for each task. any new task option must be defined here
 var (
-	MailingTaskOption *TaskOption = &TaskOption{
+	MailingTaskOption = &TaskOption{
 		MaxRetry: config.MailingTaskMaxRetry(),
 		Timeout:  config.MailingTaskTimeoutSeconds(),
 	}
 
-	MailUpdatingTaskOption *TaskOption = &TaskOption{
+	MailUpdatingTaskOption = &TaskOption{
 		MaxRetry: config.MailUpdatingTaskMaxRetry(),
 		Timeout:  config.MailUpdatingTaskTimeoutSeconds(),
 	}
