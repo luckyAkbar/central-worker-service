@@ -6,6 +6,7 @@ require (
 	github.com/banzaicloud/logrus-runtime-formatter v0.0.0-20190729070250-5ae5475bae5e
 	github.com/evalphobia/logrus_sentry v0.8.2
 	github.com/go-redis/redis/v9 v9.0.0-rc.2
+	github.com/google/uuid v1.1.2
 	github.com/labstack/echo/v4 v4.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
