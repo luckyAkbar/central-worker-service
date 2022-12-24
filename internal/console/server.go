@@ -39,7 +39,25 @@ func server(c *cobra.Command, args []string) {
 
 	defer helper.WrapCloser(sqlDB.Close)
 
+	mailRepo := repository.NewMailRepository(db.PostgresDB)
+	userRepo := repository.NewUserRepository(db.PostgresDB)
+	sessionRepo := repository.NewSessionRepository(db.PostgresDB)
+
+	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
+	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase, workerClient)
+	authUsecase := usecase.NewAuthUsecase(sessionRepo, userRepo)
+
 	HTTPServer := echo.New()
+	HTTPServer.Pre(echoMiddleware.AddTrailingSlash())
+	HTTPServer.Use(middleware.RequestID())
+	HTTPServer.Use(echoMiddleware.Logger())
+	HTTPServer.Use(echoMiddleware.Recover())
+	HTTPServer.Use(echoMiddleware.CORS())
 
 	newRelic, nrError := nr.NewApplication(
 		nr.ConfigAppName(config.NewRelicServerAppName()),
@@ -50,33 +68,15 @@ func server(c *cobra.Command, args []string) {
 		nr.ConfigAppLogDecoratingEnabled(config.NewRelicLoggingLogDecorationEnabled()),
 	)
 
-	HTTPServer.Pre(echoMiddleware.AddTrailingSlash())
-
 	if nrError == nil {
 		logrus.Info("adding newrelic echo middleware")
 		HTTPServer.Use(nrEcho.Middleware(newRelic))
 	}
 
-	HTTPServer.Use(middleware.RequestID())
-	HTTPServer.Use(echoMiddleware.Logger())
-	HTTPServer.Use(echoMiddleware.Recover())
-	HTTPServer.Use(echoMiddleware.CORS())
-
-	mailRepo := repository.NewMailRepository(db.PostgresDB)
-	userRepo := repository.NewUserRepository(db.PostgresDB)
-
-	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
-	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase, workerClient)
-
 	apiGroup := HTTPServer.Group("api")
 	authGroup := HTTPServer.Group("auth")
 
-	rest.Init(apiGroup, authGroup, mailUsecase, userUsecase)
+	rest.Init(apiGroup, authGroup, mailUsecase, userUsecase, authUsecase)
 
 	logrus.Info("starting the server...")
 	if err := HTTPServer.Start(config.ServerPort()); err != nil {

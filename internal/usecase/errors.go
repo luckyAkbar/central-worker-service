@@ -18,4 +18,5 @@ var (
 	MsgInternalError      = "internal error"
 	MsgNotFound           = "not found"
 	MsgForbidden          = "forbidden"
+	MsgInvalidInput       = "invalid input"
 )
