@@ -45,10 +45,13 @@ func (u *User) GenerateActivationSignatureInput() string {
 // UserUsecase usecase for user
 type UserUsecase interface {
 	Register(ctx context.Context, input *RegisterUserInput) (*User, UsecaseError)
+	Activate(ctx context.Context, userID, signature string) UsecaseError
 }
 
 // UserRepository repository for user
 type UserRepository interface {
+	ActivateByUserID(ctx context.Context, userID string) error
 	Create(ctx context.Context, u *User) error
+	FindByID(ctx context.Context, id string) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 }

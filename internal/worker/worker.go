@@ -18,6 +18,7 @@ var mux = asynq.NewServeMux()
 func registerTask(th model.TaskHandler) {
 	mux.HandleFunc(string(model.TaskMailing), th.HandleMailingTask)
 	mux.HandleFunc(string(model.TaskMailRecordUpdating), th.HandleMailUpdatingTask)
+	mux.HandleFunc(string(model.TaskUserActivation), th.HandleUserActivationTask)
 }
 
 type worker struct {
@@ -166,6 +167,39 @@ func (w *worker) RegisterMailUpdatingTask(ctx context.Context, mail *model.Mail,
 	}
 
 	logger.Info("success enqueue mail updating task. info: ", utils.Dump(info))
+
+	return nil
+}
+
+func (w *worker) RegisterUserActivationTask(ctx context.Context, userID string) error {
+	log := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"id":  userID,
+	})
+
+	log.Info("start usera activation task")
+
+	payload, err := json.Marshal(userID)
+	if err != nil {
+		log.Error("failed to marshall in user activation task", err)
+		return err
+	}
+
+	task := asynq.NewTask(
+		string(model.TaskUserActivation),
+		payload,
+		asynq.MaxRetry(model.UserActivationTaskOption.MaxRetry),
+		asynq.Timeout(model.UserActivationTaskOption.Timeout),
+		asynq.Queue(string(model.PriorityHigh)),
+	)
+
+	info, err := w.client.EnqueueContext(ctx, task)
+	if err != nil {
+		log.Error("failed to enqueue task user activation: ", err)
+		return err
+	}
+
+	log.Info("success enqueue task user activation: ", utils.Dump(info))
 
 	return nil
 }

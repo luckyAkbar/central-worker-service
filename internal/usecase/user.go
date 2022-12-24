@@ -15,15 +15,17 @@ import (
 )
 
 type userUsecase struct {
-	userRepo    model.UserRepository
-	mailUsecase model.MailUsecase
+	userRepo     model.UserRepository
+	mailUsecase  model.MailUsecase
+	workerClient model.WorkerClient
 }
 
 // NewUserUsecase return a new user usecase
-func NewUserUsecase(userRepo model.UserRepository, mailUsecase model.MailUsecase) model.UserUsecase {
+func NewUserUsecase(userRepo model.UserRepository, mailUsecase model.MailUsecase, workerClient model.WorkerClient) model.UserUsecase {
 	return &userUsecase{
 		userRepo,
 		mailUsecase,
+		workerClient,
 	}
 }
 
@@ -121,4 +123,70 @@ func (u *userUsecase) Register(ctx context.Context, input *model.RegisterUserInp
 	log.Info("finish registering user")
 
 	return user, model.NilUsecaseError
+}
+
+// Activate activate user if signature is match
+func (u *userUsecase) Activate(ctx context.Context, userID, signature string) model.UsecaseError {
+	log := logrus.WithFields(logrus.Fields{
+		"ctx":       helper.DumpContext(ctx),
+		"userID":    userID,
+		"signature": signature,
+	})
+
+	log.Info("start user activation process")
+
+	if userID == "" || signature == "" {
+		logrus.Info("invalid input, user id and signature empty")
+		return model.UsecaseError{
+			UnderlyingError: ErrValidations,
+			Message:         "userID or signature cannot be empty",
+		}
+	}
+
+	user, err := u.userRepo.FindByID(ctx, userID)
+	switch err {
+	default:
+		log.Error(err)
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		log.Info("user not found id: ", userID)
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+	}
+
+	// if already active, just return nil
+	if user.IsActive {
+		return model.NilUsecaseError
+	}
+
+	input := user.GenerateActivationSignatureInput()
+	sig := helper.CreateHashSHA512([]byte(input))
+
+	if sig != signature {
+		log.Info("signature is not match")
+		return model.UsecaseError{
+			UnderlyingError: ErrForbidden,
+			Message:         MsgForbidden,
+		}
+	}
+
+	log.Info("start enqueueing task user activation")
+
+	if err := u.workerClient.RegisterUserActivationTask(ctx, user.ID); err != nil {
+		log.Error("received error on enqueueing task user activation: ", err)
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgFailedRegisterTask,
+		}
+	}
+
+	return model.NilUsecaseError
 }
