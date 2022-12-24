@@ -10,6 +10,9 @@ server:
     activation:
       # don't suffixed with /
       base_url: ""
+  sender:
+    email: ""
+    name : ""
 
 worker:
   concurrency: 5
@@ -23,9 +26,7 @@ worker:
 
 sendinblue:
   api_key: ""
-  sender:
-    email: ""
-    name: ""
+  is_activated: true
 
 postgres:
   host: ""
@@ -42,3 +43,9 @@ redis:
   min: 1
   max: 5
   worker_broker_host: ""
+
+mailgun:
+  is_activated: true
+  domain: ""
+  private_api_key: ""
+  public_api_key: ""
