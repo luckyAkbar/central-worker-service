@@ -49,3 +49,14 @@ mailgun:
   domain: ""
   private_api_key: ""
   public_api_key: ""
+
+newrelic:
+  lisence: ""
+  logging:
+    log_forwarding_enabled: true
+    app_log_enabled: true
+    log_decoration_enabled: true
+  server:
+    app_name: "CENTRAL_WORKER_SERVICE_SERVER"
+  worker:
+    app_name: "CENTRAL_WORKER_SERVICE_WORKER"

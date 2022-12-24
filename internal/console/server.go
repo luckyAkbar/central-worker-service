@@ -13,6 +13,9 @@ import (
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
 	"github.com/luckyAkbar/central-worker-service/internal/usecase"
 	"github.com/luckyAkbar/central-worker-service/internal/worker"
+	nrEcho "github.com/newrelic/go-agent/v3/integrations/nrecho-v4"
+	nrLogrus "github.com/newrelic/go-agent/v3/integrations/nrlogrus"
+	nr "github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -38,7 +41,22 @@ func server(c *cobra.Command, args []string) {
 
 	HTTPServer := echo.New()
 
+	newRelic, nrError := nr.NewApplication(
+		nr.ConfigAppName(config.NewRelicServerAppName()),
+		nr.ConfigLicense(config.NewRelicLisence()),
+		nr.ConfigAppLogForwardingEnabled(config.NewRelicLoggingLogForwarding()),
+		nrLogrus.ConfigStandardLogger(),
+		nr.ConfigAppLogEnabled(config.NewRelicLoggingAppLogEnabled()),
+		nr.ConfigAppLogDecoratingEnabled(config.NewRelicLoggingLogDecorationEnabled()),
+	)
+
 	HTTPServer.Pre(echoMiddleware.AddTrailingSlash())
+
+	if nrError == nil {
+		logrus.Info("adding newrelic echo middleware")
+		HTTPServer.Use(nrEcho.Middleware(newRelic))
+	}
+
 	HTTPServer.Use(middleware.RequestID())
 	HTTPServer.Use(echoMiddleware.Logger())
 	HTTPServer.Use(echoMiddleware.Recover())
