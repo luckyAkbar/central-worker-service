@@ -71,11 +71,12 @@ func server(c *cobra.Command, args []string) {
 	}
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
-	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase)
+	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase, workerClient)
 
 	apiGroup := HTTPServer.Group("api")
+	authGroup := HTTPServer.Group("auth")
 
-	rest.Init(apiGroup, mailUsecase, userUsecase)
+	rest.Init(apiGroup, authGroup, mailUsecase, userUsecase)
 
 	logrus.Info("starting the server...")
 	if err := HTTPServer.Start(config.ServerPort()); err != nil {

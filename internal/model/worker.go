@@ -15,6 +15,7 @@ type Task string
 var (
 	TaskMailing            Task = "task:mailing"
 	TaskMailRecordUpdating Task = "task:mailing:update_record"
+	TaskUserActivation     Task = "task:user_activation"
 )
 
 // Priority is worker priority
@@ -44,18 +45,25 @@ var (
 		MaxRetry: config.MailUpdatingTaskMaxRetry(),
 		Timeout:  config.MailUpdatingTaskTimeoutSeconds(),
 	}
+
+	UserActivationTaskOption = &TaskOption{
+		MaxRetry: config.UserActivationTaskMaxRetry(),
+		Timeout:  config.UserActivationTaskTimeoutSeconds(),
+	}
 )
 
 // WorkerClient interface to enqueue task to worker
 type WorkerClient interface {
 	RegisterMailingTask(ctx context.Context, input *Mail, priority Priority) error
 	RegisterMailUpdatingTask(ctx context.Context, mail *Mail, priority Priority) error
+	RegisterUserActivationTask(ctx context.Context, id string) error
 }
 
 // TaskHandler worker task handler
 type TaskHandler interface {
 	HandleMailingTask(ctx context.Context, t *asynq.Task) error
 	HandleMailUpdatingTask(ctx context.Context, t *asynq.Task) error
+	HandleUserActivationTask(ctx context.Context, task *asynq.Task) error
 }
 
 // WorkerServer interface for worker server

@@ -16,14 +16,16 @@ type taskHandler struct {
 	mailUtility  model.MailUtility
 	workerClient model.WorkerClient
 	mailRepo     model.MailRepository
+	userRepo     model.UserRepository
 }
 
 // NewTaskHandler creates a new task handler
-func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient) model.TaskHandler {
+func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient, userRepo model.UserRepository) model.TaskHandler {
 	return &taskHandler{
 		mailUtility:  mailUtility,
 		mailRepo:     mailRepo,
 		workerClient: workerClient,
+		userRepo:     userRepo,
 	}
 }
 
@@ -96,6 +98,31 @@ func (th *taskHandler) HandleMailUpdatingTask(ctx context.Context, t *asynq.Task
 	}
 
 	logger.Info("finish handle mail update")
+
+	return nil
+}
+
+func (th *taskHandler) HandleUserActivationTask(ctx context.Context, t *asynq.Task) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"type":    t.Type(),
+		"payload": string(t.Payload()),
+	})
+
+	logger.Info("start handle user activation task")
+
+	var id string
+	if err := json.Unmarshal(t.Payload(), &id); err != nil {
+		logger.Error("failed to unmarshal user activation task: ", err)
+		return err
+	}
+
+	if err := th.userRepo.ActivateByUserID(ctx, id); err != nil {
+		logger.Error("task failed to activate user: ", err)
+		return err
+	}
+
+	logger.Info("finish activating user")
 
 	return nil
 }

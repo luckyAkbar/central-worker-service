@@ -141,6 +141,30 @@ func MailUpdatingTaskTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// UserActivationTaskMaxRetry max retry for mail updating task
+func UserActivationTaskMaxRetry() int {
+	cfg := viper.GetInt("worker.task.user_activation.max_retry")
+	logrus.Info("user activation task max retry: ", cfg)
+
+	if cfg == 0 {
+		return 5
+	}
+
+	return cfg
+}
+
+// UserActivationTaskTimeoutSeconds timeout for mail updating task
+func UserActivationTaskTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.user_activation.timeout_seconds")
+	logrus.Info("user activation task max retry: ", cfg)
+
+	if cfg == 0 {
+		return time.Second * 5
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
 // ServerSenderName name for email in sending
 func ServerSenderName() string {
 	return viper.GetString("server.sender.name")

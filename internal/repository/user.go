@@ -60,3 +60,43 @@ func (r *userRepo) FindByEmail(ctx context.Context, email string) (*model.User, 
 		return user, nil
 	}
 }
+
+// FindByID find user by id
+func (r *userRepo) FindByID(ctx context.Context, id string) (*model.User, error) {
+	log := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"id":  id,
+	})
+
+	log.Info("start to find user by id")
+
+	user := &model.User{}
+	err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Take(user).Error
+	switch err {
+	default:
+		log.Error(err)
+		return nil, err
+	case gorm.ErrRecordNotFound:
+		log.Info("user not found by id: ", id)
+		return nil, ErrNotFound
+	case nil:
+		return user, nil
+	}
+}
+
+// ActivateByUserID set is_active field with true in matching user id
+func (r *userRepo) ActivateByUserID(ctx context.Context, id string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"id":  id,
+	})
+
+	logger.Info("activating user by id in database")
+
+	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("is_active", true).Error; err != nil {
+		logger.Error("failed to update user activation db: ", err)
+		return err
+	}
+
+	return nil
+}

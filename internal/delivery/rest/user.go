@@ -39,3 +39,33 @@ func (s *Service) handleRegisterUser() echo.HandlerFunc {
 		}
 	}
 }
+
+func (s *Service) handleUserActivation() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		userID := c.Param("userID")
+		signature := c.QueryParam("signature")
+
+		err := s.userUsecase.Activate(c.Request().Context(), userID, signature)
+		switch err.UnderlyingError {
+		default:
+			logrus.WithFields(logrus.Fields{
+				"ctx":       helper.DumpContext(c.Request().Context()),
+				"userID":    userID,
+				"signature": signature,
+			}).Error(err)
+			return sendError(http.StatusInternalServerError, err.Message)
+
+		case usecase.ErrValidations:
+			return sendError(http.StatusBadRequest, err.Message)
+
+		case usecase.ErrNotFound:
+			return sendError(http.StatusNotFound, err.Message)
+
+		case usecase.ErrForbidden:
+			return sendError(http.StatusForbidden, err.Message)
+
+		case nil:
+			return c.NoContent(http.StatusOK)
+		}
+	}
+}
