@@ -11,3 +11,7 @@ var (
 	ErrBadRequest = echo.NewHTTPError(http.StatusBadRequest, "bad request")
 	ErrInternal   = echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 )
+
+func sendError(status int, msg string) *echo.HTTPError {
+	return echo.NewHTTPError(status, msg)
+}
