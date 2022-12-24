@@ -141,6 +141,16 @@ func MailUpdatingTaskTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// ServerSenderName name for email in sending
+func ServerSenderName() string {
+	return viper.GetString("server.sender.name")
+}
+
+// ServerSenderEmail email for email address in sending
+func ServerSenderEmail() string {
+	return viper.GetString("server.sender.email")
+}
+
 // SendinblueAPIKey get API key for send in blue
 func SendinblueAPIKey() string {
 	return viper.GetString("sendinblue.api_key")
@@ -149,9 +159,34 @@ func SendinblueAPIKey() string {
 // SendInBlueSender generate sendinblue sender using configured sender name and sender email
 func SendInBlueSender() *lib.SendSmtpEmailSender {
 	return &lib.SendSmtpEmailSender{
-		Name:  viper.GetString("sendinblue.sender.name"),
-		Email: viper.GetString("sendinblue.sender.email"),
+		Name:  ServerSenderName(),
+		Email: ServerSenderEmail(),
 	}
+}
+
+// SendInBlueIsActivated is activated sendinblue
+func SendInBlueIsActivated() bool {
+	return viper.GetBool("sendinblue.is_activated")
+}
+
+// MailgunIsActivated is activated mailgun
+func MailgunIsActivated() bool {
+	return viper.GetBool("mailgun.is_activated")
+}
+
+// MailgunDomain mailgun domain
+func MailgunDomain() string {
+	return viper.GetString("mailgun.domain")
+}
+
+// MailgunPrivateAPIKey mailgun private api key
+func MailgunPrivateAPIKey() string {
+	return viper.GetString("mailgun.private_api_key")
+}
+
+// MailgunPublicAPIKey mailgun public api key
+func MailgunPublicAPIKey() string {
+	return viper.GetString("mailgun.public_api_key")
 }
 
 // WorkerBrokerRedisHost redis host for worker task broker

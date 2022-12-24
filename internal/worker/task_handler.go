@@ -7,24 +7,21 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/kumparan/go-utils"
-	"github.com/luckyAkbar/central-worker-service/internal/client"
-	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
-	"github.com/sendinblue/APIv3-go-library/lib"
 	"github.com/sirupsen/logrus"
 )
 
 type taskHandler struct {
-	sibClient    *client.SIB
+	mailUtility  model.MailUtility
 	workerClient model.WorkerClient
 	mailRepo     model.MailRepository
 }
 
 // NewTaskHandler creates a new task handler
-func NewTaskHandler(sibClient *client.SIB, mailRepo model.MailRepository, workerClient model.WorkerClient) model.TaskHandler {
+func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient) model.TaskHandler {
 	return &taskHandler{
-		sibClient:    sibClient,
+		mailUtility:  mailUtility,
 		mailRepo:     mailRepo,
 		workerClient: workerClient,
 	}
@@ -47,45 +44,23 @@ func (th *taskHandler) HandleMailingTask(ctx context.Context, t *asynq.Task) err
 		return err
 	}
 
-	to, err := mail.SendInBlueTo()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	cc, err := mail.SendInBlueCc()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	bcc, err := mail.SendInBlueBcc()
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	logger.Info("start to call sibClient send email function")
-
-	result, err := th.sibClient.SendEmail(ctx, lib.SendSmtpEmail{
-		Sender:      config.SendInBlueSender(),
-		To:          to,
-		Bcc:         bcc,
-		Cc:          cc,
-		HtmlContent: mail.HTMLContent,
-		Subject:     mail.Subject,
-	})
+	res, client, err := th.mailUtility.SendEmail(ctx, mail)
 
 	if err != nil {
 		logger.Error(err)
 		return err
 	}
 
-	logger.Info("received result from sibClient send email: ", utils.Dump(result))
+	metadata := &model.MailResultMetadata{
+		Detail:    res,
+		Signature: client,
+	}
+
+	logger.Info("received result from send email: ", metadata)
 
 	mail.Status = model.MailStatusSuccess
 	mail.Metadata = &sql.NullString{
-		String: utils.Dump(result),
+		String: utils.Dump(metadata),
 		Valid:  true,
 	}
 
