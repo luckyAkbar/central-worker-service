@@ -13,6 +13,12 @@ server:
   sender:
     email: ""
     name : ""
+  auth:
+    session:
+      access_token_expiry_hour: 48
+      refresh_token_expiry_hour: 144
+      access_token_length: 50
+      refresh_token_length: 100
 
 worker:
   concurrency: 5
