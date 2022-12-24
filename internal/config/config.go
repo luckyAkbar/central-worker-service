@@ -158,3 +158,19 @@ func SendInBlueSender() *lib.SendSmtpEmailSender {
 func WorkerBrokerRedisHost() string {
 	return viper.GetString("redis.worker_broker_host")
 }
+
+// MinUserPasswordLength return minimum length of user password
+func MinUserPasswordLength() int {
+	cfg := viper.GetInt("server.user.min_password_length")
+
+	if cfg == 0 {
+		return 8
+	}
+
+	return cfg
+}
+
+// UserActivationBaseURL return user activation url
+func UserActivationBaseURL() string {
+	return viper.GetString("server.user.activation.base_url")
+}
