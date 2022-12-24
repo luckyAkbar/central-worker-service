@@ -209,3 +209,33 @@ func MinUserPasswordLength() int {
 func UserActivationBaseURL() string {
 	return viper.GetString("server.user.activation.base_url")
 }
+
+// NewRelicLisence new relic lisence
+func NewRelicLisence() string {
+	return viper.GetString("newrelic.lisence")
+}
+
+// NewRelicLoggingLogForwarding nr log forwarding
+func NewRelicLoggingLogForwarding() bool {
+	return viper.GetBool("newrelic.logging.log_forwarding_enabled")
+}
+
+// NewRelicLoggingAppLogEnabled app log enabled
+func NewRelicLoggingAppLogEnabled() bool {
+	return viper.GetBool("newrelic.logging.app_log_enabled")
+}
+
+// NewRelicLoggingLogDecorationEnabled log decoration enabled
+func NewRelicLoggingLogDecorationEnabled() bool {
+	return viper.GetBool("newrelic.logging.log_decoration_enabled")
+}
+
+// NewRelicServerAppName server app name
+func NewRelicServerAppName() string {
+	return viper.GetString("newrelic.server.app_name")
+}
+
+// NewRelicWorkerAppName worker app name
+func NewRelicWorkerAppName() string {
+	return viper.GetString("newrelic.worker.app_name")
+}

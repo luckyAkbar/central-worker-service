@@ -10,11 +10,16 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/kumparan/go-utils v1.29.0
 	github.com/labstack/echo/v4 v4.9.1
+	github.com/mailgun/mailgun-go/v4 v4.8.1
+	github.com/newrelic/go-agent/v3 v3.20.2
+	github.com/newrelic/go-agent/v3/integrations/nrecho-v4 v1.0.3
+	github.com/newrelic/go-agent/v3/integrations/nrlogrus v1.0.1
 	github.com/rubenv/sql-migrate v1.2.0
 	github.com/sendinblue/APIv3-go-library v2.0.0+incompatible
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
+	gopkg.in/guregu/null.v4 v4.0.0
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.2
 )
@@ -36,7 +41,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leekchan/accounting v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/mailgun/mailgun-go/v4 v4.8.1 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.19 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -45,9 +49,9 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20221024183307-1bc688fe9f3e // indirect
 	google.golang.org/grpc v1.50.1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
-	gopkg.in/guregu/null.v4 v4.0.0 // indirect
 )
 
 require (
