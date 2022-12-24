@@ -45,6 +45,7 @@ func server(c *cobra.Command, args []string) {
 	HTTPServer.Use(echoMiddleware.CORS())
 
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
+	userRepo := repository.NewUserRepository(db.PostgresDB)
 
 	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
 	if err != nil {
@@ -52,10 +53,11 @@ func server(c *cobra.Command, args []string) {
 	}
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
+	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase)
 
 	apiGroup := HTTPServer.Group("api")
 
-	rest.Init(apiGroup, mailUsecase)
+	rest.Init(apiGroup, mailUsecase, userUsecase)
 
 	logrus.Info("starting the server...")
 	if err := HTTPServer.Start(config.ServerPort()); err != nil {

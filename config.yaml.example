@@ -1,10 +1,15 @@
 server:
   env: "development"
-  port: "8080"
+  port: "9095"
   log:
     level: "INFO"
     sentry:
-      dsn: ""
+      #dsn: ""
+  user:
+    min_password_length: 8
+    activation:
+      # don't suffixed with /
+      base_url: ""
 
 worker:
   concurrency: 5
@@ -16,19 +21,19 @@ worker:
       max_retry: 5
       timeout_seconds: 10
 
-
 sendinblue:
   api_key: ""
   sender:
-    email: "no-reply@mail.cd"
-    name: "central worker service"
+    email: ""
+    name: ""
 
 postgres:
   host: ""
   db: ""
-  use"
+  user: ""
+  pw: ""
   port: "5432"
-  ssl_mode: "disable"
+  ssl_mode: ""
 
 redis:
   addr: ""
@@ -36,4 +41,4 @@ redis:
   db: 5
   min: 1
   max: 5
-  worker_broker_host: "redis://mm/2"
+  worker_broker_host: ""
