@@ -263,3 +263,43 @@ func NewRelicServerAppName() string {
 func NewRelicWorkerAppName() string {
 	return viper.GetString("newrelic.worker.app_name")
 }
+
+// AccessTokenExpiryHour expiry hour for access token
+func AccessTokenExpiryHour() time.Duration {
+	cfg := viper.GetInt("server.auth.session.access_token_expiry_hour")
+	if cfg == 0 {
+		cfg = 8
+	}
+
+	return time.Hour * time.Duration(cfg)
+}
+
+// RefreshTokenExpiryHour expiry hour for refresh token
+func RefreshTokenExpiryHour() time.Duration {
+	cfg := viper.GetInt("server.auth.session.refresh_token_expiry_hour")
+	if cfg == 0 {
+		cfg = 8
+	}
+
+	return time.Hour * time.Duration(cfg)
+}
+
+// AccessTokenLength length of the access token
+func AccessTokenLength() int {
+	cfg := viper.GetInt("server.auth.session.access_token_length")
+	if cfg == 0 {
+		return 8
+	}
+
+	return cfg
+}
+
+// RefreshTokenLength length of the refresh token
+func RefreshTokenLength() int {
+	cfg := viper.GetInt("server.auth.session.refresh_token_length")
+	if cfg == 0 {
+		return 8
+	}
+
+	return cfg
+}

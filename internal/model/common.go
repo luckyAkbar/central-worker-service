@@ -4,8 +4,6 @@ import (
 	validate "github.com/go-playground/validator/v10"
 )
 
-type contextKey string
-
 // ReqIDCtxKey context key for request id
 var ReqIDCtxKey contextKey = "request_id_context_key"
 
