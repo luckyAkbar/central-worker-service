@@ -43,8 +43,9 @@ func runWorker(_ *cobra.Command, _ []string) {
 
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
 	userRepo := repository.NewUserRepository(db.PostgresDB)
+	siakadRepo := repository.NewSiakadRepository(db.PostgresDB)
 
-	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo)
+	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo)
 
 	wrk, err := worker.NewServer(config.WorkerBrokerRedisHost(), taskHandler)
 	if err != nil {

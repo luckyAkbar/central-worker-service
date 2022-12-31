@@ -41,7 +41,7 @@ func (u *imageUsecase) Upload(ctx context.Context, input *model.UploadImageInput
 		}
 	}
 
-	if err := helper.FilterImageMimetype(file); err != nil {
+	if err := helper.FilterImageMimetype(file.Header["Content-Type"][0]); err != nil {
 		logger.Info("mimetype is not allowed")
 		return nil, model.UsecaseError{
 			UnderlyingError: ErrValidations,

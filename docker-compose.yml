@@ -23,3 +23,11 @@ services:
     command: "./main telegram-bot"
     volumes:
       - /var/local_storage/image/:/var/local_storage/media/image/
+
+  siakad_scraper:
+    container_name: "central_worker_service_siakad_scraper"
+    build: .
+    command: "./main siakad-scraper"
+    volumes:
+      - /var/local_storage/image/:/var/local_storage/media/image/
+    

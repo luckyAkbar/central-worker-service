@@ -141,11 +141,9 @@ func GenerateToken(n int) string {
 }
 
 // FilterImageMimetype check mimetype and validate if allowed
-func FilterImageMimetype(file *multipart.FileHeader) error {
+func FilterImageMimetype(mimetype string) error {
 	logger := logrus.WithField("func", "helper_image_mimetype")
 	err := errors.New("image mimetype is not supported")
-
-	mimetype := file.Header["Content-Type"][0]
 
 	if mimetype == "" {
 		logger.Info("mimetype is empty")

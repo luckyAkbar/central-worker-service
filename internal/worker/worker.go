@@ -19,6 +19,7 @@ func registerTask(th model.TaskHandler) {
 	mux.HandleFunc(string(model.TaskMailing), th.HandleMailingTask)
 	mux.HandleFunc(string(model.TaskMailRecordUpdating), th.HandleMailUpdatingTask)
 	mux.HandleFunc(string(model.TaskUserActivation), th.HandleUserActivationTask)
+	mux.HandleFunc(string(model.TaskSiakadProfilePictureScraping), th.HandleSiakadProfilePictureTask)
 }
 
 type worker struct {
@@ -200,6 +201,39 @@ func (w *worker) RegisterUserActivationTask(ctx context.Context, userID string) 
 	}
 
 	log.Info("success enqueue task user activation: ", utils.Dump(info))
+
+	return nil
+}
+
+func (w *worker) RegisterSiakadProfilePictureTask(ctx context.Context, npm string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"npm": npm,
+	})
+
+	logger.Info("registeting profile picture scraping task")
+
+	payload, err := json.Marshal(npm)
+	if err != nil {
+		logger.WithError(err).Error("failed to marshal npm")
+		return err
+	}
+
+	task := asynq.NewTask(
+		string(model.TaskSiakadProfilePictureScraping),
+		payload,
+		asynq.MaxRetry(model.SiakadProfilePictureScraperTaskOption.MaxRetry),
+		asynq.Timeout(model.SiakadProfilePictureScraperTaskOption.Timeout),
+		asynq.Queue(string(model.PriorityHigh)),
+	)
+
+	info, err := w.client.EnqueueContext(ctx, task)
+	if err != nil {
+		logger.WithError(err).Info("failed to enqueue task")
+		return err
+	}
+
+	logrus.Info("successfully enqueued task: ", utils.Dump(info))
 
 	return nil
 }
