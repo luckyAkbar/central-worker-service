@@ -3,7 +3,9 @@ package siakadu
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/sirupsen/logrus"
 )
@@ -30,6 +32,18 @@ func (s *siakadu) Run() {
 		}
 
 		logrus.Info("success registering NPM: ", npm)
+
+		if i%config.SiakadScrapingDelayIndex() == 0 {
+			logger := logrus.WithFields(logrus.Fields{
+				"index":   i,
+				"seconds": config.SiakadScrapingDelaySeconds(),
+			})
+			logger.Info("delaying siakad scraping request")
+
+			time.Sleep(config.SiakadScrapingDelaySeconds())
+
+			logger.Info("delay finish")
+		}
 	}
 
 }

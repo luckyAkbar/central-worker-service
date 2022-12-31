@@ -368,3 +368,23 @@ func ImageMediaLocalStorage() string {
 
 	return cfg
 }
+
+func SiakadScrapingDelaySeconds() time.Duration {
+	cfg := viper.GetInt("siakad.scraping.delay_seconds")
+
+	if cfg == 0 {
+		return time.Second * 10
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+func SiakadScrapingDelayIndex() int {
+	cfg := viper.GetInt("siakad.scraping.delay_index")
+
+	if cfg == 0 {
+		return 10000
+	}
+
+	return cfg
+}
