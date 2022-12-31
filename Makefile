@@ -39,6 +39,9 @@ check-modd-exists:
 run-worker: check-modd-exists
 	@modd -f ./.modd/worker.modd.conf
 
+run-telegram-bot: check-modd-exists
+	@modd -f ./.modd/telegram-bot.modd.conf
+
 check-cognitive-complexity:
 	find . -type f -name '*.go' -not -name "*.pb.go" -not -name "mock*.go" -not -name "generated.go" -not -name "federation.go" \
       -exec gocognit -over 15 {} +

@@ -303,3 +303,43 @@ func RefreshTokenLength() int {
 
 	return cfg
 }
+
+// TelegramBotToken get telegram bot token
+func TelegramBotToken() string {
+	cfg := viper.GetString("telegram_bot.token")
+	if cfg == "" {
+		panic("telegram bot token is not exists")
+	}
+
+	return cfg
+}
+
+// TelegramBotUseTestEnv return whether to use test env by gotgbot module
+func TelegramBotUseTestEnv() bool {
+	return viper.GetBool("telegram_bot.environment.use_test_env")
+}
+
+// TelegramBotTimeoutDuration timeout duration for telegram bot
+func TelegramBotTimeoutDuration() time.Duration {
+	cfg := viper.GetInt("telegram_bot.environment.timeout")
+	if cfg == 0 {
+		return time.Second * 10
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+// TelegramBotTimeout timeout for telegram bot
+func TelegramBotTimeout() int64 {
+	cfg := viper.GetInt64("telegram_bot.environment.timeout")
+	if cfg == 0 {
+		return 10
+	}
+
+	return cfg
+}
+
+// TelegramBotDropPendingUpdate decide wheter to drop pending update from telegram bot
+func TelegramBotDropPendingUpdate() bool {
+	return viper.GetBool("telegram_bot.environment.drop_pending_update")
+}

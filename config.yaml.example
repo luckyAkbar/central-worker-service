@@ -66,3 +66,11 @@ newrelic:
     app_name: "CENTRAL_WORKER_SERVICE_SERVER"
   worker:
     app_name: "CENTRAL_WORKER_SERVICE_WORKER"
+
+
+telegram_bot:
+  token: ""
+  environment:
+    use_test_env: false
+    timeout: 10
+    drop_pending_update: false
