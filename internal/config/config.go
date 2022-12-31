@@ -343,3 +343,28 @@ func TelegramBotTimeout() int64 {
 func TelegramBotDropPendingUpdate() bool {
 	return viper.GetBool("telegram_bot.environment.drop_pending_update")
 }
+
+// ImageMediaAllowedTypes allowed mimetype for image media
+func ImageMediaAllowedTypes() []string {
+	return viper.GetStringSlice("server.media.image.allowed_types")
+}
+
+// ImageMediaMaxSizeBytes max size in bytes for image media
+func ImageMediaMaxSizeBytes() int64 {
+	return viper.GetInt64("server.media.image.max_size_bytes")
+}
+
+// ImageMediaTokenLength token length for image media
+func ImageMediaTokenLength() int {
+	return viper.GetInt("server.media.image.token.length")
+}
+
+// ImageMediaLocalStorage local storage for image media
+func ImageMediaLocalStorage() string {
+	cfg := viper.GetString("server.media.image.local_storage")
+	if cfg == "" {
+		panic("config for server.media.image.local_storage is not defined")
+	}
+
+	return cfg
+}
