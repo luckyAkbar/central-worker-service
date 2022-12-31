@@ -27,6 +27,7 @@ require (
 
 require (
 	github.com/antihax/optional v1.0.0 // indirect
+	github.com/aws/aws-sdk-go v1.44.171 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/getsentry/sentry-go v0.11.0 // indirect
@@ -39,6 +40,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/graph-gophers/graphql-go v1.4.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leekchan/accounting v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

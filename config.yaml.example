@@ -19,6 +19,17 @@ server:
       refresh_token_expiry_hour: 144
       access_token_length: 50
       refresh_token_length: 100
+  media:
+    image:
+      # dont suffixed with /
+      local_storage: "./local_storage/media/image"
+      allowed_types:
+        - image/png
+        - image/jpeg
+        - image/jpg
+      max_size_bytes: 1048576
+      token:
+        length: 100
 
 worker:
   concurrency: 5
