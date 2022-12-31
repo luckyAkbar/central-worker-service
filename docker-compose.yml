@@ -12,3 +12,8 @@ services:
     container_name: "central_worker_service_worker"
     build: .
     command: "./main worker"
+
+  telebot:
+    container_name: "central_worker_service_telegram_bot"
+    build: .
+    command: "./main telegram-bot"
