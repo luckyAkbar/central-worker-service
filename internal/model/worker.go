@@ -54,7 +54,7 @@ var (
 
 	SiakadProfilePictureScraperTaskOption = &TaskOption{
 		MaxRetry: 10,
-		Timeout:  20,
+		Timeout:  time.Second * 20,
 	}
 )
 
