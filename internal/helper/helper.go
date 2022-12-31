@@ -5,13 +5,18 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math/rand"
+	"mime/multipart"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/kumparan/go-utils"
+	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/sirupsen/logrus"
 )
@@ -133,4 +138,62 @@ func GenerateToken(n int) string {
 	}
 
 	return sb.String()
+}
+
+// FilterImageMimetype check mimetype and validate if allowed
+func FilterImageMimetype(file *multipart.FileHeader) error {
+	logger := logrus.WithField("func", "helper_image_mimetype")
+	err := errors.New("image mimetype is not supported")
+
+	mimetype := file.Header["Content-Type"][0]
+
+	if mimetype == "" {
+		logger.Info("mimetype is empty")
+		return err
+	}
+
+	for _, allowedType := range config.ImageMediaAllowedTypes() {
+		if mimetype == allowedType {
+			return nil
+		}
+	}
+
+	logger.Info("mimetype is not allowed: ", mimetype)
+
+	return err
+}
+
+// SaveMediaImageToLocalStorage save the file media to local storage
+func SaveMediaImageToLocalStorage(file *multipart.FileHeader, storagePath string, fullname string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"file":        utils.Dump(file),
+		"storagePath": storagePath,
+		"fullname":    fullname,
+	})
+
+	src, err := file.Open()
+	if err != nil {
+		logger.Error("failed to open file: ", err)
+		return err
+	}
+
+	defer WrapCloser(src.Close)
+
+	dst, err := os.Create(fmt.Sprintf("%s/%s", storagePath, fullname))
+	if err != nil {
+		logger.Error("failed to create file: ", err)
+		return err
+	}
+
+	defer WrapCloser(dst.Close)
+
+	total, err := io.Copy(dst, src)
+	if err != nil {
+		logger.Error("failed to copy file: ", err)
+		return err
+	}
+
+	logger.Info("success save image with total size: ", total)
+
+	return nil
 }
