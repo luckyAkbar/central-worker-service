@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+  worker:
+    build: .
+    command: "./main worker"
+    volumes:
+      - /var/local_storage/image/:/var/local_storage/media/image/
