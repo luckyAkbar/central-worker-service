@@ -344,6 +344,11 @@ func TelegramBotDropPendingUpdate() bool {
 	return viper.GetBool("telegram_bot.environment.drop_pending_update")
 }
 
+// TelegramBotStartLink start link for user to interact with our bot
+func TelegramBotStartLink() string {
+	return viper.GetString("telegram_bot.start_link")
+}
+
 // ImageMediaAllowedTypes allowed mimetype for image media
 func ImageMediaAllowedTypes() []string {
 	return viper.GetStringSlice("server.media.image.allowed_types")
@@ -391,10 +396,12 @@ func SiakadScrapingDelayIndex() int {
 	return cfg
 }
 
+// SiakadScraperNPMStartAt controll which npm to start to scrape
 func SiakadScraperNPMStartAt() int {
 	return viper.GetInt("siakad.scraping.start_at")
 }
 
+// SiakadScraperNPMFinishAt controll which NPM to stop scraping
 func SiakadScraperNPMFinishAt() int {
 	return viper.GetInt("siakad.scraping.finish_at")
 }
