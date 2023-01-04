@@ -390,3 +390,11 @@ func SiakadScrapingDelayIndex() int {
 
 	return cfg
 }
+
+func SiakadScraperNPMStartAt() int {
+	return viper.GetInt("siakad.scraping.start_at")
+}
+
+func SiakadScraperNPMFinishAt() int {
+	return viper.GetInt("siakad.scraping.finish_at")
+}

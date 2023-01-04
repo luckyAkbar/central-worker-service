@@ -25,7 +25,7 @@ func NewSiakaduScraper(repo model.SiakaduRepository, workerClient model.WorkerCl
 
 func (s *siakadu) Run() {
 	// 9999999999 is current max npm
-	for i := 0; i <= 9999999999; i++ {
+	for i := config.SiakadScraperNPMStartAt(); i <= config.SiakadScraperNPMFinishAt(); i++ {
 		npm := fmt.Sprintf("%d", i)
 		if err := s.workerClient.RegisterSiakadProfilePictureTask(context.Background(), npm); err != nil {
 			logrus.Error(err)
