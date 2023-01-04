@@ -369,6 +369,7 @@ func ImageMediaLocalStorage() string {
 	return cfg
 }
 
+// SiakadScrapingDelaySeconds delay for siakad scraping process
 func SiakadScrapingDelaySeconds() time.Duration {
 	cfg := viper.GetInt("siakad.scraping.delay_seconds")
 
@@ -379,6 +380,7 @@ func SiakadScrapingDelaySeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// SiakadScrapingDelayIndex controls when exactly to delay siakad scraping process
 func SiakadScrapingDelayIndex() int {
 	cfg := viper.GetInt("siakad.scraping.delay_index")
 

@@ -1,4 +1,4 @@
--- +migrate Up notransaction\
+-- +migrate Up notransaction
 
 CREATE TABLE IF NOT EXISTS siakadu_scraping_results (
     id VARCHAR(255) PRIMARY KEY,

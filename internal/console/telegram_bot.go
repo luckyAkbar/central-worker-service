@@ -8,7 +8,10 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/luckyAkbar/central-worker-service/internal/config"
+	"github.com/luckyAkbar/central-worker-service/internal/db"
+	"github.com/luckyAkbar/central-worker-service/internal/repository"
 	"github.com/luckyAkbar/central-worker-service/internal/telebot"
+	"github.com/luckyAkbar/central-worker-service/internal/usecase"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -60,7 +63,13 @@ func telegramBot(cmd *cobra.Command, args []string) {
 		},
 	})
 
-	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher)
+	db.InitializePostgresConn()
+
+	teleRepo := repository.NewTelegramRepository(db.PostgresDB)
+
+	teleUsecase := usecase.NewTelegramUsecase(teleRepo)
+
+	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase)
 	telebotHandler.RegisterHandlers()
 
 	err = updater.StartPolling(bot, &ext.PollingOpts{
