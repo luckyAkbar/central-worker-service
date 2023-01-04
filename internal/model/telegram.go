@@ -6,6 +6,7 @@ import (
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/kumparan/go-utils"
+	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
@@ -24,7 +25,7 @@ type TelegramUser struct {
 // GenerateShareSecretMessagingText returns a text for user to share on their social media
 // to announce their're ready to have secret messaging
 func (tu *TelegramUser) GenerateShareSecretMessagingText() string {
-	return fmt.Sprintf("Hello, I'm %s. If you want to secretly have chat with me in Telegram without me knowing who you are, you can register from this bot: https://t.me/Central_Service_Bot and my code is: %d. Can't wait to have chat with you!", tu.FirstName, tu.ID)
+	return fmt.Sprintf("Hello, I'm %s. If you want to secretly have chat with me in Telegram without me knowing who you are, you can register from this bot: %s and my code is: %d. Can't wait to have chat with you!", tu.FirstName, config.TelegramBotStartLink(), tu.ID)
 }
 
 // SendMessageToThisUser helper function to send message to private chat
