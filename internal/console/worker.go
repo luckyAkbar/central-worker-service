@@ -5,6 +5,7 @@ import (
 	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/db"
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
+	"github.com/luckyAkbar/central-worker-service/internal/usecase"
 	"github.com/luckyAkbar/central-worker-service/internal/util"
 	"github.com/luckyAkbar/central-worker-service/internal/worker"
 	"github.com/mailgun/mailgun-go/v4"
@@ -44,8 +45,11 @@ func runWorker(_ *cobra.Command, _ []string) {
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
 	userRepo := repository.NewUserRepository(db.PostgresDB)
 	siakadRepo := repository.NewSiakadRepository(db.PostgresDB)
+	telegramRepo := repository.NewTelegramRepository(db.PostgresDB)
 
-	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo)
+	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient)
+
+	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo, telegramUsecase)
 
 	wrk, err := worker.NewServer(config.WorkerBrokerRedisHost(), taskHandler)
 	if err != nil {

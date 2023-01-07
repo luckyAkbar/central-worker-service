@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/kumparan/go-utils"
@@ -54,15 +55,68 @@ func (tu *TelegramUser) SendMessageToThisUser(bot *gotgbot.Bot, text string, opt
 	return nil
 }
 
+// SecretMessagingSession session created to indicate that the Sender is estabilished a
+// conversation and bot will secretly forwarding the message to target
+type SecretMessagingSession struct {
+	ID        string    `json:"id"`
+	SenderID  int64     `json:"sender_id"`
+	TargetID  int64     `json:"target_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiredAt time.Time `json:"expired_at"`
+}
+
+// IsExpired compared now in utc against sms.ExpiredAt
+func (sms *SecretMessagingSession) IsExpired() bool {
+	return time.Now().UTC().After(sms.ExpiredAt)
+}
+
+// IsOwnedByID check is sms.SenderID is same with id
+func (sms *SecretMessagingSession) IsOwnedByID(id int64) bool {
+	return sms.SenderID == id
+}
+
+// SecretMessageNode secret message node
+type SecretMessageNode struct {
+	ID        int64     `json:"id"`
+	SessionID string    `json:"session_id"`
+	CreatedAt time.Time `json:"created_at"`
+	Text      string    `json:"text"`
+
+	// to indicate this message was sent for which message. must be FK to this table
+	PreviousSecretMessageID null.Int `json:"previous_secret_message_id"`
+}
+
 // TelegramUsecase usecase for telegram
 type TelegramUsecase interface {
 	// RegisterSecretMessagingService will check is user already registered by it's ID
 	// If already registered, returns err already exists.
 	RegisterSecretMessagingService(ctx context.Context, teleUser *TelegramUser) UsecaseError
+
+	InitateSecretMessagingSession(ctx context.Context, senderID, targetID int64) (*SecretMessagingSession, *TelegramUser, UsecaseError)
+
+	CreateSecretMessagingMessageNode(ctx context.Context, node *SecretMessageNode) UsecaseError
+
+	SetMessageNodeToSecretMessagingSession(ctx context.Context, sessID string, msgNode *gotgbot.Message) UsecaseError
+
+	SendSecretMessage(ctx context.Context, sms *SecretMessagingSession, secretMsg *gotgbot.Message, parentMsgNode *SecretMessageNode) UsecaseError
+
+	HandleReplyForSecretMessage(ctx context.Context, session *SecretMessagingSession, replyMsg *gotgbot.Message, parentMsgNode *SecretMessageNode) UsecaseError
+
+	SentTextMessageToUser(ctx context.Context, userID int64, message string, opts *gotgbot.SendMessageOpts) (*gotgbot.Message, UsecaseError)
+
+	FindSecretMessageNodeByID(ctx context.Context, msgID int64) (*SecretMessageNode, UsecaseError)
+
+	FindSecretMessagingSessionByID(ctx context.Context, sessID string) (*SecretMessagingSession, UsecaseError)
+
+	FindUserByID(ctx context.Context, id int64) (*TelegramUser, UsecaseError)
 }
 
 // TelegramRepository telegram repository
 type TelegramRepository interface {
 	CreateUser(ctx context.Context, user *TelegramUser) error
+	CreateSecretMessagingSession(ctx context.Context, sess *SecretMessagingSession) error
+	CreateSecretMessagingMessageNode(ctx context.Context, msg *SecretMessageNode) error
 	FindUserByID(ctx context.Context, userID int64) (*TelegramUser, error)
+	FindSecretMessagingSessionByID(ctx context.Context, sessionID string) (*SecretMessagingSession, error)
+	FindSecretMessagingMessageNodeByID(ctx context.Context, msgID int64) (*SecretMessageNode, error)
 }
