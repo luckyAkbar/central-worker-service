@@ -165,6 +165,50 @@ func UserActivationTaskTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// SettingMessageNodeToSecretMessagingSessionMaxRetry max retry for setting messaging node
+func SettingMessageNodeToSecretMessagingSessionMaxRetry() int {
+	cfg := viper.GetInt("worker.task.setting_message_node_to_secret_messaging_session.max_retry")
+
+	if cfg == 0 {
+		return 1000
+	}
+
+	return cfg
+}
+
+// SettingMessageNodeToSecretMessagingSessionTimeoutSeconds timeout for setting messaging node
+func SettingMessageNodeToSecretMessagingSessionTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.setting_message_node_to_secret_messaging_session.timeout_seconds")
+
+	if cfg == 0 {
+		return time.Second * 100
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+// SendTelegramMessageToUserMaxRetry max retry
+func SendTelegramMessageToUserMaxRetry() int {
+	cfg := viper.GetInt("worker.task.send_telegram_message_to_user.max_retry")
+
+	if cfg == 0 {
+		return 1000
+	}
+
+	return cfg
+}
+
+// SendTelegramMessageToUserTimeoutSeconds timeout
+func SendTelegramMessageToUserTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.send_telegram_message_to_user.timeout_seconds")
+
+	if cfg == 0 {
+		return time.Second * 100
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
 // ServerSenderName name for email in sending
 func ServerSenderName() string {
 	return viper.GetString("server.sender.name")
@@ -347,6 +391,16 @@ func TelegramBotDropPendingUpdate() bool {
 // TelegramBotStartLink start link for user to interact with our bot
 func TelegramBotStartLink() string {
 	return viper.GetString("telegram_bot.start_link")
+}
+
+// TelegramBotSecretMessagingSessionExpiryHour expiry hour
+func TelegramBotSecretMessagingSessionExpiryHour() time.Duration {
+	cfg := viper.GetInt("telegram_bot.secret_messaging.session.expiry_hours")
+	if cfg == 0 {
+		return time.Hour * 1000
+	}
+
+	return time.Hour * time.Duration(cfg)
 }
 
 // ImageMediaAllowedTypes allowed mimetype for image media
