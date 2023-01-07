@@ -12,9 +12,12 @@ import (
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
 	"github.com/luckyAkbar/central-worker-service/internal/telebot"
 	"github.com/luckyAkbar/central-worker-service/internal/usecase"
+	"github.com/luckyAkbar/central-worker-service/internal/worker"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+var bot *gotgbot.Bot
 
 var telegramBotCmd = &cobra.Command{
 	Use:   "telegram-bot",
@@ -26,8 +29,8 @@ func init() {
 	RootCmd.AddCommand(telegramBotCmd)
 }
 
-func telegramBot(cmd *cobra.Command, args []string) {
-	bot, err := gotgbot.NewBot(config.TelegramBotToken(), &gotgbot.BotOpts{
+func init() {
+	b, err := gotgbot.NewBot(config.TelegramBotToken(), &gotgbot.BotOpts{
 		Client:             http.Client{},
 		DisableTokenCheck:  false,
 		UseTestEnvironment: config.TelegramBotUseTestEnv(),
@@ -37,10 +40,14 @@ func telegramBot(cmd *cobra.Command, args []string) {
 		},
 	})
 
+	bot = b
+
 	if err != nil {
 		logrus.Panic("failed to run telegram bot: ", err)
 	}
+}
 
+func telegramBot(cmd *cobra.Command, args []string) {
 	updater := ext.NewUpdater(&ext.UpdaterOpts{
 		ErrorLog: log.New(os.Stdout, "telegram_bot: ", log.LUTC),
 		DispatcherOpts: ext.DispatcherOpts{
@@ -67,9 +74,14 @@ func telegramBot(cmd *cobra.Command, args []string) {
 
 	teleRepo := repository.NewTelegramRepository(db.PostgresDB)
 
-	teleUsecase := usecase.NewTelegramUsecase(teleRepo)
+	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
-	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase)
+	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient)
+
+	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase, teleRepo, workerClient)
 	telebotHandler.RegisterHandlers()
 
 	err = updater.StartPolling(bot, &ext.PollingOpts{
