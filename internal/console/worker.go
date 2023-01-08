@@ -1,6 +1,7 @@
 package console
 
 import (
+	"github.com/go-redis/redis/v9"
 	"github.com/luckyAkbar/central-worker-service/internal/client"
 	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/db"
@@ -40,11 +41,20 @@ func runWorker(_ *cobra.Command, _ []string) {
 		logrus.Fatal(err)
 	}
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         config.RedisAddr(),
+		Password:     config.RedisPassword(),
+		DB:           config.RedisCacheDB(),
+		MinIdleConns: config.RedisMinIdleConn(),
+		MaxIdleConns: config.RedisMaxIdleConn(),
+	})
+	cacher := db.NewCacher(redisClient)
+
 	mailUtility := util.NewMailUtility(sibClient, mailgunClient)
 
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
 	userRepo := repository.NewUserRepository(db.PostgresDB)
-	siakadRepo := repository.NewSiakadRepository(db.PostgresDB)
+	siakadRepo := repository.NewSiakadRepository(db.PostgresDB, cacher)
 	telegramRepo := repository.NewTelegramRepository(db.PostgresDB)
 
 	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient)
