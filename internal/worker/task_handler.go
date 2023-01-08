@@ -12,31 +12,36 @@ import (
 	"os"
 	"time"
 
+	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/hibiken/asynq"
 	"github.com/kumparan/go-utils"
 	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
+	"github.com/luckyAkbar/central-worker-service/internal/usecase"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/guregu/null.v4"
 )
 
 type taskHandler struct {
-	mailUtility  model.MailUtility
-	workerClient model.WorkerClient
-	mailRepo     model.MailRepository
-	userRepo     model.UserRepository
-	siakadRepo   model.SiakaduRepository
+	mailUtility     model.MailUtility
+	workerClient    model.WorkerClient
+	mailRepo        model.MailRepository
+	userRepo        model.UserRepository
+	siakadRepo      model.SiakaduRepository
+	telegramUsecase model.TelegramUsecase
 }
 
 // NewTaskHandler creates a new task handler
-func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient, userRepo model.UserRepository, siakadRepo model.SiakaduRepository) model.TaskHandler {
+func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient, userRepo model.UserRepository, siakadRepo model.SiakaduRepository, telegramUsecase model.TelegramUsecase) model.TaskHandler {
 	return &taskHandler{
-		mailUtility:  mailUtility,
-		mailRepo:     mailRepo,
-		workerClient: workerClient,
-		userRepo:     userRepo,
-		siakadRepo:   siakadRepo,
+		mailUtility:     mailUtility,
+		mailRepo:        mailRepo,
+		workerClient:    workerClient,
+		userRepo:        userRepo,
+		siakadRepo:      siakadRepo,
+		telegramUsecase: telegramUsecase,
 	}
 }
 
@@ -231,6 +236,125 @@ func (th *taskHandler) HandleSiakadProfilePictureTask(ctx context.Context, task 
 	}
 
 	logger.Info("success saving profile foto with written: ", written)
+
+	return nil
+}
+
+func (th *taskHandler) HandleSettingMessageNodeToSecretMessagingSessionTask(ctx context.Context, t *asynq.Task) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"type":    t.Type(),
+		"payload": string(t.Payload()),
+	})
+
+	logger.Info("start handling setting message node to secret messaging session")
+
+	payload := &model.SettingMessageNodeToSecretMessagingSessionPayload{}
+	if err := json.Unmarshal(t.Payload(), payload); err != nil {
+		logger.WithError(err).Error("failed to unmarshal setting message node to secret messaging session payload")
+		return err
+	}
+
+	ucErr := th.telegramUsecase.SetMessageNodeToSecretMessagingSession(ctx, payload.SessionID, payload.Message)
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to set message node to secret messaging session")
+		return ucErr.UnderlyingError
+
+	case usecase.ErrNotFound:
+		logger.WithError(ucErr.UnderlyingError).Error("unexpectedly not found from SetMessageNodeToSecretMessagingSession function in worker")
+		return ucErr.UnderlyingError
+
+	case nil:
+		logger.Info("success SetMessageNodeToSecretMessagingSession")
+		return nil
+	}
+}
+
+func (th *taskHandler) HandleSendTelegramMessageToUserTask(ctx context.Context, task *asynq.Task) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"type":    task.Type(),
+		"payload": string(task.Payload()),
+	})
+
+	logger.Info("start handling send telegram message to user")
+
+	payload := &model.SendTelegramMessageToUserPayload{}
+	if err := json.Unmarshal(task.Payload(), payload); err != nil {
+		logger.WithError(err).Error("failed to unmarshal task payload")
+		return err
+	}
+
+	user, ucErr := th.telegramUsecase.FindUserByID(ctx, payload.UserID)
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to find user by ID")
+		return ucErr.UnderlyingError
+
+	case usecase.ErrNotFound:
+		logger.WithError(ucErr.UnderlyingError).Error("handling send telegram called but get not found in user")
+		return ucErr.UnderlyingError
+
+	case nil:
+		break
+	}
+
+	opts := &gotgbot.SendMessageOpts{
+		ParseMode: "html",
+	}
+
+	if payload.ReplyToMessageID.Valid {
+		opts.ReplyToMessageId = payload.ReplyToMessageID.Int64
+	}
+
+	msg, ucErr := th.telegramUsecase.SentTextMessageToUser(ctx, user.ID, payload.Message, opts)
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to send text message to user")
+		return ucErr.UnderlyingError
+
+	case usecase.ErrNotFound:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to send text message to user because user is not found")
+		return ucErr.UnderlyingError
+
+	case nil:
+		break
+	}
+
+	if err := th.workerClient.RegisterCreateSecretMessagingMessageNode(ctx, &model.SecretMessageNode{
+		ID:                      msg.MessageId,
+		SessionID:               payload.SessionID,
+		CreatedAt:               time.Now().UTC(),
+		Text:                    msg.Text,
+		PreviousSecretMessageID: null.IntFrom(payload.MessageID),
+	}); err != nil {
+		logger.WithError(err).Error("failed to register create secret message node")
+		return err
+	}
+
+	return nil
+}
+
+func (th *taskHandler) HandleCreateSecretMessagingMessageNode(ctx context.Context, t *asynq.Task) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"type":    t.Type(),
+		"payload": string(t.Payload()),
+	})
+
+	logger.Info("start handling create secret messaging message node")
+
+	node := &model.SecretMessageNode{}
+	if err := json.Unmarshal(t.Payload(), node); err != nil {
+		logger.WithError(err).Error("failed to unmarshal task payload")
+		return err
+	}
+
+	if err := th.telegramUsecase.CreateSecretMessagingMessageNode(ctx, node); err.UnderlyingError != nil {
+		logger.WithError(err.UnderlyingError).Error("failed to create secret messaging message node")
+		return err.UnderlyingError
+	}
 
 	return nil
 }
