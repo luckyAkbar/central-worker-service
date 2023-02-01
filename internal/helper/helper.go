@@ -195,3 +195,28 @@ func SaveMediaImageToLocalStorage(file *multipart.FileHeader, storagePath string
 
 	return nil
 }
+
+// GenerateStartAndEndDate will create time instance based on date
+// return (start, end, error)
+// start is the date with 00:00:00
+// end is the date with 23:59:59
+func GenerateStartAndEndDate(date string) (time.Time, time.Time, error) {
+	switch strings.ToLower(date) {
+	default:
+		t, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			logrus.WithError(err).Info("failed to parse date: ", date)
+			return t, t, err
+		}
+
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location()), nil
+	case "today":
+		// TODO: maybe should confirm user timezone?
+		t := time.Now()
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location()), nil
+
+	case "yesterday":
+		t := time.Now().AddDate(0, 0, -1)
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location()), nil
+	}
+}
