@@ -24,15 +24,17 @@ type handler struct {
 	teleUsecase  model.TelegramUsecase
 	telegramRepo model.TelegramRepository
 	workerClient model.WorkerClient
+	diaryUsecase model.DiaryUsecase
 }
 
 // NewTelegramHandler create new telegram handler
-func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient) model.TelegramBot {
+func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient, diaryUsecase model.DiaryUsecase) model.TelegramBot {
 	return &handler{
 		dispatcher,
 		teleUsecase,
 		telegramRepo,
 		workerClient,
+		diaryUsecase,
 	}
 }
 
@@ -40,6 +42,8 @@ func (h *handler) RegisterHandlers() {
 	h.dispatcher.AddHandler(handlers.NewCommand("start", h.startCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("register", h.registerCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("secret", h.initiateSecretMessagingHandler))
+	h.dispatcher.AddHandler(handlers.NewCommand("diary", h.createDiaryCommandHandler))
+	h.dispatcher.AddHandler(handlers.NewCommand("find-diary", h.findDiaryCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal("register_secret_telegram_messaging"), h.registerSecretTelegramMessagingCallbackHandler))
 	h.dispatcher.AddHandler(handlers.NewMessage(message.Text, h.secretMessagingHandler))
 }

@@ -1,3 +1,4 @@
+// Package client is the functionality to interact with external service such as mailgun, sendinblue, etc
 package client
 
 import (

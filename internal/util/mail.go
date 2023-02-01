@@ -1,3 +1,5 @@
+// Package util will contains external functionality such as mail utility
+// or 3rd party client interface
 package util
 
 import (
