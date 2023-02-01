@@ -1,3 +1,4 @@
+// Package usecase contains all usecase implementation
 package usecase
 
 import (

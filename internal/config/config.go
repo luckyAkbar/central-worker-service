@@ -1,3 +1,4 @@
+// Package config will hold all function to read environment configuration values
 package config
 
 import (

@@ -1,3 +1,4 @@
+// Package model contains core data structure, data types and it's functionality
 package model
 
 import (

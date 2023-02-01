@@ -1,3 +1,4 @@
+// Package siakadu contains all siakadu related functionality
 package siakadu
 
 import (

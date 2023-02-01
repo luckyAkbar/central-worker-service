@@ -1,3 +1,4 @@
+// Package middleware hold all middleware related such as HTTP middleware, etc
 package middleware
 
 import (

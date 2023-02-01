@@ -1,3 +1,4 @@
+// Package rest is HTTP rest presenter layer for this project
 package rest
 
 import (

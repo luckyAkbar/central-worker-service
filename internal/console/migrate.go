@@ -1,3 +1,4 @@
+// Package console hold all CLI-based interface functionality
 package console
 
 import (
