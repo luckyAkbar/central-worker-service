@@ -19,6 +19,14 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+var startMessage = `Welcome to Central Service Telegram Bot!
+
+If you want to use secret messaging feature, you have to register first. Just type "/register" and sent that to me.
+After you are registered, you can then start secretly messaging with the person you want!
+
+To start secret messaging feature, all you have to do is type <strong>/register [user-id]</strong>. The 'user-id' is the ID of the person you want to start secret messaging with.
+`
+
 type handler struct {
 	dispatcher   *ext.Dispatcher
 	teleUsecase  model.TelegramUsecase
@@ -238,12 +246,10 @@ func (h *handler) startCommandHandler(b *gotgbot.Bot, ctx *ext.Context) error {
 
 	_, err := ctx.EffectiveMessage.Reply(
 		b,
-		`Welcome to Central Service Telegram Bot!
-
-If you want to use secret messaging feature, you have to register first. Just type "/register" and sent that to me.
-After you are registered, you can then start secretly messaging with the person you want!`,
+		startMessage,
 		&gotgbot.SendMessageOpts{
 			ReplyToMessageId: ctx.Message.MessageId,
+			ParseMode:        "html",
 		},
 	)
 
