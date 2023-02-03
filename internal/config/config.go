@@ -404,6 +404,17 @@ func TelegramBotSecretMessagingSessionExpiryHour() time.Duration {
 	return time.Hour * time.Duration(cfg)
 }
 
+// TelegramBotDiaryCacheTime cache time when callback query delete diary
+// returning not found. default to 180
+func TelegramBotDiaryCacheTime() int64 {
+	cfg := viper.GetInt64("telegram_bot.diary.callback_cache_time")
+	if cfg == 0 {
+		return 180
+	}
+
+	return cfg
+}
+
 // ImageMediaAllowedTypes allowed mimetype for image media
 func ImageMediaAllowedTypes() []string {
 	return viper.GetStringSlice("server.media.image.allowed_types")

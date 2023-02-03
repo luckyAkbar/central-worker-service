@@ -53,6 +53,7 @@ func (h *handler) RegisterHandlers() {
 	h.dispatcher.AddHandler(handlers.NewCommand("diary", h.createDiaryCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("find-diary", h.findDiaryCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.RegisterSecretMessagingService)), h.registerSecretTelegramMessagingCallbackHandler))
+	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.DeleteDiaryPrefix)), h.handleDeleteDiaryByID))
 	h.dispatcher.AddHandler(handlers.NewMessage(message.Text, h.secretMessagingHandler))
 }
 
