@@ -86,11 +86,13 @@ type SettingMessageNodeToSecretMessagingSessionPayload struct {
 
 // SendTelegramMessageToUserPayload payload
 type SendTelegramMessageToUserPayload struct {
-	UserID           int64
-	Message          string
-	MessageID        int64
-	ReplyToMessageID null.Int
-	SessionID        string
+	UserID               int64
+	Message              string
+	MessageID            int64
+	ReplyToMessageID     null.Int
+	SessionID            string
+	ParseMode            string
+	InlineKeybordButtons []gotgbot.InlineKeyboardButton
 }
 
 // WorkerClient interface to enqueue task to worker

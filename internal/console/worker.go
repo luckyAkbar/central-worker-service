@@ -55,9 +55,11 @@ func runWorker(_ *cobra.Command, _ []string) {
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
 	userRepo := repository.NewUserRepository(db.PostgresDB)
 	siakadRepo := repository.NewSiakadRepository(db.PostgresDB, cacher)
-	telegramRepo := repository.NewTelegramRepository(db.PostgresDB)
+	telegramRepo := repository.NewTelegramRepository(db.PostgresDB, cacher)
 
-	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient)
+	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
+
+	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient, mailUsecase)
 
 	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo, telegramUsecase)
 

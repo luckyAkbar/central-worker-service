@@ -415,6 +415,33 @@ func TelegramBotDiaryCacheTime() int64 {
 	return cfg
 }
 
+// TelegramBotAdminEmailReportTarget get email to be used when user reporting
+func TelegramBotAdminEmailReportTarget() string {
+	return viper.GetString("telegram_bot.report.admin_email_report_target")
+}
+
+// TelegramBotDefaultReportCacheTime cache time for report callback button
+func TelegramBotDefaultReportCacheTime() int64 {
+	cfg := viper.GetInt64("telegram_bot.report.default_report_cache_time")
+	if cfg == 0 {
+		// should be one day
+		return 86400
+	}
+
+	return cfg
+}
+
+// TelegramBotDefaultBlockCacheTime cache time for block callback button
+func TelegramBotDefaultBlockCacheTime() int64 {
+	cfg := viper.GetInt64("telegram_bot.block.default_blocked_cache_time")
+	if cfg == 0 {
+		// should be one day
+		return 86400
+	}
+
+	return cfg
+}
+
 // ImageMediaAllowedTypes allowed mimetype for image media
 func ImageMediaAllowedTypes() []string {
 	return viper.GetStringSlice("server.media.image.allowed_types")
