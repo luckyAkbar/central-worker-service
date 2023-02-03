@@ -52,7 +52,7 @@ func (h *handler) RegisterHandlers() {
 	h.dispatcher.AddHandler(handlers.NewCommand("secret", h.initiateSecretMessagingHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("diary", h.createDiaryCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("find-diary", h.findDiaryCommandHandler))
-	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal("register_secret_telegram_messaging"), h.registerSecretTelegramMessagingCallbackHandler))
+	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.RegisterSecretMessagingService)), h.registerSecretTelegramMessagingCallbackHandler))
 	h.dispatcher.AddHandler(handlers.NewMessage(message.Text, h.secretMessagingHandler))
 }
 
@@ -218,7 +218,7 @@ func (h *handler) registerCommandHandler(b *gotgbot.Bot, ctx *ext.Context) error
 					{
 						gotgbot.InlineKeyboardButton{
 							Text:         "Secret Telegram Messaging",
-							CallbackData: "register_secret_telegram_messaging",
+							CallbackData: string(model.RegisterSecretMessagingService),
 						},
 					},
 				},
