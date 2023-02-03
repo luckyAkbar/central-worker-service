@@ -81,7 +81,10 @@ newrelic:
 
 telegram_bot:
   token: ""
+  start_link: ""
   environment:
     use_test_env: false
     timeout: 10
     drop_pending_update: false
+  diary:
+    delete_not_found_cache_time: 180
