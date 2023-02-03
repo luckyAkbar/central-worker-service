@@ -85,3 +85,27 @@ func (r *diaryRepo) GetDiariesByWrittenDateRange(ctx context.Context, start, end
 
 	return diaries, nil
 }
+
+func (r *diaryRepo) DeleteByID(ctx context.Context, diaryID, ownerID string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"diaryID": diaryID,
+		"ownerID": ownerID,
+	})
+
+	logger.Info("starting to delete diary by ID")
+
+	deletedDiary := &model.Diary{}
+	err := r.db.WithContext(ctx).Unscoped().
+		Model(&model.Diary{}).Where("id = ? AND owner_id = ?", diaryID, ownerID).
+		Delete(deletedDiary).Error
+
+	if err != nil {
+		logger.WithError(err).Error("failed to delete diary by ID")
+		return err
+	}
+
+	logger.Info("deleted diary: ", utils.Dump(deletedDiary))
+
+	return nil
+}

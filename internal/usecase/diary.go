@@ -140,3 +140,50 @@ func (u *diaryUsecase) GetDiariesByWrittenDateRange(ctx context.Context, start, 
 	}
 
 }
+
+func (u *diaryUsecase) DeleteByID(ctx context.Context, diaryID, ownerID string) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":     helper.DumpContext(ctx),
+		"diaryID": diaryID,
+		"ownerID": ownerID,
+	})
+
+	logger.Info("start deleteing diary by ID")
+
+	diary, err := u.repo.FindDiaryByIDAndOwnerID(ctx, diaryID, ownerID)
+	switch err {
+	default:
+		logger.WithError(err).Error("faild to find diary by id and owner id")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		break
+	}
+
+	// safety check
+	if diary.OwnerID != ownerID {
+		return model.UsecaseError{
+			UnderlyingError: ErrForbidden,
+			Message:         MsgForbidden,
+		}
+	}
+
+	if err := u.repo.DeleteByID(ctx, diaryID, ownerID); err != nil {
+		logger.WithError(err).Error("failed to delete diary")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+	}
+
+	return model.NilUsecaseError
+}

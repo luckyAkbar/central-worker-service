@@ -56,6 +56,7 @@ type DiaryUsecase interface {
 	Create(ctx context.Context, input *CreateDiaryInput) (*Diary, UsecaseError)
 	GetDiaryByID(ctx context.Context, diaryID, ownerID string) (*Diary, UsecaseError)
 	GetDiariesByWrittenDateRange(ctx context.Context, start, end time.Time, ownerID string) ([]Diary, UsecaseError)
+	DeleteByID(ctx context.Context, diaryID, ownerID string) UsecaseError
 }
 
 // DiaryRepository is an interface for repository layer for diary
@@ -63,4 +64,5 @@ type DiaryRepository interface {
 	Create(ctx context.Context, diary *Diary) error
 	FindDiaryByIDAndOwnerID(ctx context.Context, diaryID, ownerID string) (*Diary, error)
 	GetDiariesByWrittenDateRange(ctx context.Context, start, end time.Time, ownerID string) ([]Diary, error)
+	DeleteByID(ctx context.Context, diaryID, ownerID string) error
 }

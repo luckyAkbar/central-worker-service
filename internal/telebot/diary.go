@@ -11,6 +11,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/kumparan/go-utils"
+	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/luckyAkbar/central-worker-service/internal/usecase"
@@ -82,6 +83,16 @@ func (h *handler) createDiaryCommandHandler(b *gotgbot.Bot, ctx *ext.Context) er
 			fmt.Sprint("Diary saved. ID: ", diary.ID),
 			&gotgbot.SendMessageOpts{
 				ReplyToMessageId: ctx.EffectiveMessage.MessageId,
+				ReplyMarkup: gotgbot.InlineKeyboardMarkup{
+					InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+						{
+							{
+								Text:         "delete this diary",
+								CallbackData: model.GenerateDeleteDiaryCallbackQuery(diary.ID),
+							},
+						},
+					},
+				},
 			},
 		)
 	}
@@ -289,6 +300,57 @@ func (h *handler) handleFindDiaryByDateRange(b *gotgbot.Bot, ctx *ext.Context, s
 			&gotgbot.SendMessageOpts{
 				ReplyToMessageId: ctx.EffectiveMessage.MessageId,
 				ParseMode:        "html",
+			},
+		)
+	}
+}
+
+func (h *handler) handleDeleteDiaryByID(b *gotgbot.Bot, ctx *ext.Context) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"command": "delete diary callback",
+		"user":    utils.Dump(ctx.EffectiveUser),
+		"msg":     utils.Dump(ctx.EffectiveMessage),
+	})
+
+	logger.Info("start handling delete diary by id callback")
+
+	diaryID, err := model.GetDiaryIDFromDiaryCallbackQuery(ctx.Update.CallbackQuery.Data)
+	if err != nil {
+		logger.Error(err)
+	}
+
+	ucErr := h.diaryUsecase.DeleteByID(context.Background(), diaryID, fmt.Sprintf("%d", ctx.EffectiveUser.Id))
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(err).Error("failed to delete diary by ID")
+		return helper.TelegramCallbackAnswerer(
+			b,
+			ctx.Update.CallbackQuery,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      "Sorry, bot experiencing unexpected problem. Please try that again later",
+				ShowAlert: true,
+			},
+		)
+
+	case usecase.ErrNotFound:
+		return helper.TelegramCallbackAnswerer(
+			b,
+			ctx.Update.CallbackQuery,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      "Sorry, bot experiencing unexpected problem. Please try that again later",
+				ShowAlert: true,
+				CacheTime: config.TelegramBotDiaryCacheTime(),
+			},
+		)
+
+	case nil:
+		return helper.TelegramCallbackAnswerer(
+			b,
+			ctx.Update.CallbackQuery,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      fmt.Sprintf("Okay, diary with ID: %s has been deleted permanently", diaryID),
+				ShowAlert: true,
+				CacheTime: config.TelegramBotDiaryCacheTime(),
 			},
 		)
 	}
