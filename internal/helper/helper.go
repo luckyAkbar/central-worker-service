@@ -99,6 +99,23 @@ func HTMLContentForUserRegistrationEmail(username, url string) string {
 	`, username, url)
 }
 
+// HTMLContentForReportSecretMessagingService return html content for report secret messaging email for admin
+func HTMLContentForReportSecretMessagingService(msgNode *model.SecretMessageNode) string {
+	return fmt.Sprintf(`
+	<html>
+		<h1>User Report on Secret Messaging Service</h1>
+		<p>Hi, Telegram Bot Admin! There is a user report on Secret Messaging Service. Please check the report below.</p>
+
+		<p>Message Node ID: %d</p>
+		<p>Secret Message Session ID: %s</p>
+		<p>Text: %s</p>
+
+		<p>Thanks in advance!</p>
+		<p>this is an auto-generated email, please do not reply to this email.</p>
+	</html>
+	`, msgNode.ID, msgNode.SessionID, msgNode.Text)
+}
+
 // BaseLetter source to generate the random string
 type BaseLetter string
 

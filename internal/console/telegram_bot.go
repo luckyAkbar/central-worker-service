@@ -7,6 +7,7 @@ import (
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
+	"github.com/go-redis/redis/v9"
 	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/db"
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
@@ -71,16 +72,26 @@ func telegramBot(cmd *cobra.Command, args []string) {
 	})
 
 	db.InitializePostgresConn()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         config.RedisAddr(),
+		Password:     config.RedisPassword(),
+		DB:           config.RedisCacheDB(),
+		MinIdleConns: config.RedisMinIdleConn(),
+		MaxIdleConns: config.RedisMaxIdleConn(),
+	})
+	cacher := db.NewCacher(redisClient)
 
-	teleRepo := repository.NewTelegramRepository(db.PostgresDB)
+	teleRepo := repository.NewTelegramRepository(db.PostgresDB, cacher)
 	diaryRepo := repository.NewDiaryRepo(db.PostgresDB)
+	mailRepo := repository.NewMailRepository(db.PostgresDB)
 
 	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient)
+	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
+	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient, mailUsecase)
 	diaryUsecase := usecase.NewDiaryUsecase(diaryRepo)
 
 	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase, teleRepo, workerClient, diaryUsecase)

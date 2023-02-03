@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/kumparan/go-utils"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
@@ -11,14 +13,32 @@ import (
 )
 
 type telegramRepo struct {
-	db *gorm.DB
+	db     *gorm.DB
+	cacher model.Cacher
 }
 
 // NewTelegramRepository create new telegram repository
-func NewTelegramRepository(db *gorm.DB) model.TelegramRepository {
+func NewTelegramRepository(db *gorm.DB, cacher model.Cacher) model.TelegramRepository {
 	return &telegramRepo{
 		db,
+		cacher,
 	}
+}
+
+func (r *telegramRepo) BlockSecretMessagingSessionByID(ctx context.Context, sessID string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":    helper.DumpContext(ctx),
+		"sessID": sessID,
+	})
+
+	logger.Info("start blocking secret messaging session")
+
+	if err := r.db.WithContext(ctx).Model(&model.SecretMessagingSession{}).Where("id = ?", sessID).Update("is_blocked", true).Error; err != nil {
+		logger.WithError(err).Error("failed to block secret messaging session")
+		return err
+	}
+
+	return nil
 }
 
 func (r *telegramRepo) CreateUser(ctx context.Context, user *model.TelegramUser) error {
@@ -137,4 +157,64 @@ func (r *telegramRepo) FindSecretMessagingMessageNodeByID(ctx context.Context, m
 	case nil:
 		return msg, nil
 	}
+}
+
+func (r *telegramRepo) FindSecretMessagingSessionByUserID(ctx context.Context, senderID, targetID int64) (*model.SecretMessagingSession, error) {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":      helper.DumpContext(ctx),
+		"senderID": senderID,
+		"targetID": targetID,
+	})
+
+	logger.Info("start finding secret messaging node by user ID")
+
+	sess := &model.SecretMessagingSession{}
+	err := r.db.WithContext(ctx).Model(&model.SecretMessagingSession{}).Where("sender_id = ? AND target_id = ?", senderID, targetID).Take(sess).Error
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find secret messaging node by user ID")
+		return nil, err
+
+	case gorm.ErrRecordNotFound:
+		return nil, ErrNotFound
+
+	case nil:
+		return sess, nil
+	}
+}
+
+func (r *telegramRepo) GetBlockerForSecretMessagingSessionToCache(ctx context.Context, key string) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"key": key,
+	})
+
+	logger.Info("start getting blocker for secret messaging session to cache")
+
+	_, err := r.cacher.Get(ctx, key)
+	if err == nil {
+		return errors.New("blocker for secret messaging session is detected")
+	}
+
+	return nil
+}
+
+func (r *telegramRepo) SetBlockerForSecretMessagingSessionToCache(ctx context.Context, key string, exp time.Duration) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"key": key,
+		"exp": exp,
+	})
+
+	logger.Info("start setting blocker for secret messaging session to cache")
+
+	// value here is not important and should not be read
+	if err := r.cacher.Set(ctx, key, "true", exp); err != nil {
+		logger.WithError(err).Error("failed to set blocker for secret messaging session to cache")
+		return err
+	}
+
+	logger.Debug("blocker is set")
+
+	return nil
 }

@@ -63,6 +63,7 @@ type SecretMessagingSession struct {
 	TargetID  int64     `json:"target_id"`
 	CreatedAt time.Time `json:"created_at"`
 	ExpiredAt time.Time `json:"expired_at"`
+	IsBlocked bool      `json:"is_blocked"`
 }
 
 // IsExpired compared now in utc against sms.ExpiredAt
@@ -86,13 +87,22 @@ type SecretMessageNode struct {
 	PreviousSecretMessageID null.Int `json:"previous_secret_message_id"`
 }
 
+// CreateCacheKeyForBlockedSecretMessagingSessionUser create cache key for blocked secret messaging session in cache
+func CreateCacheKeyForBlockedSecretMessagingSessionUser(senderID, targetID int64) string {
+	return fmt.Sprintf("blocked_secret_messaging_session_%d_%d", senderID, targetID)
+}
+
 // TelegramUsecase usecase for telegram
 type TelegramUsecase interface {
 	// RegisterSecretMessagingService will check is user already registered by it's ID
 	// If already registered, returns err already exists.
 	RegisterSecretMessagingService(ctx context.Context, teleUser *TelegramUser) UsecaseError
 
+	ReportSecretMessage(ctx context.Context, msgID int64) UsecaseError
+
 	InitateSecretMessagingSession(ctx context.Context, senderID, targetID int64) (*SecretMessagingSession, *TelegramUser, UsecaseError)
+
+	BlockSecretMessagingSession(ctx context.Context, sess *SecretMessagingSession) UsecaseError
 
 	CreateSecretMessagingMessageNode(ctx context.Context, node *SecretMessageNode) UsecaseError
 
@@ -109,14 +119,20 @@ type TelegramUsecase interface {
 	FindSecretMessagingSessionByID(ctx context.Context, sessID string) (*SecretMessagingSession, UsecaseError)
 
 	FindUserByID(ctx context.Context, id int64) (*TelegramUser, UsecaseError)
+
+	GetSecretMessagingSession(ctx context.Context, senderID, targetID int64) (*SecretMessagingSession, UsecaseError)
 }
 
 // TelegramRepository telegram repository
 type TelegramRepository interface {
+	BlockSecretMessagingSessionByID(ctx context.Context, sessionID string) error
 	CreateUser(ctx context.Context, user *TelegramUser) error
 	CreateSecretMessagingSession(ctx context.Context, sess *SecretMessagingSession) error
 	CreateSecretMessagingMessageNode(ctx context.Context, msg *SecretMessageNode) error
 	FindUserByID(ctx context.Context, userID int64) (*TelegramUser, error)
 	FindSecretMessagingSessionByID(ctx context.Context, sessionID string) (*SecretMessagingSession, error)
 	FindSecretMessagingMessageNodeByID(ctx context.Context, msgID int64) (*SecretMessageNode, error)
+	FindSecretMessagingSessionByUserID(ctx context.Context, senderID, targetID int64) (*SecretMessagingSession, error)
+	GetBlockerForSecretMessagingSessionToCache(ctx context.Context, key string) error
+	SetBlockerForSecretMessagingSessionToCache(ctx context.Context, key string, exp time.Duration) error
 }

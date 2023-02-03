@@ -301,12 +301,22 @@ func (th *taskHandler) HandleSendTelegramMessageToUserTask(ctx context.Context, 
 	}
 
 	opts := &gotgbot.SendMessageOpts{
-		ParseMode: "html",
+		ParseMode: payload.ParseMode,
 	}
 
 	if payload.ReplyToMessageID.Valid {
 		opts.ReplyToMessageId = payload.ReplyToMessageID.Int64
 	}
+
+	if len(payload.InlineKeybordButtons) != 0 {
+		opts.ReplyMarkup = &gotgbot.InlineKeyboardMarkup{
+			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+				payload.InlineKeybordButtons,
+			},
+		}
+	}
+
+	logger.Debug(opts.ParseMode)
 
 	msg, ucErr := th.telegramUsecase.SentTextMessageToUser(ctx, user.ID, payload.Message, opts)
 	switch ucErr.UnderlyingError {

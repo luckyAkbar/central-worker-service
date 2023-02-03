@@ -11,6 +11,7 @@ import (
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
+	"github.com/sendinblue/APIv3-go-library/lib"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/guregu/null.v4"
 )
@@ -19,14 +20,16 @@ type telegramUsecase struct {
 	telegramRepo model.TelegramRepository
 	telebot      *gotgbot.Bot
 	workerClient model.WorkerClient
+	mailUsecase  model.MailUsecase
 }
 
 // NewTelegramUsecase create a new telegram usecase
-func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient) model.TelegramUsecase {
+func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient, mailUsecase model.MailUsecase) model.TelegramUsecase {
 	return &telegramUsecase{
 		telegramRepo,
 		telebot,
 		workerClient,
+		mailUsecase,
 	}
 }
 
@@ -115,6 +118,14 @@ func (u *telegramUsecase) InitateSecretMessagingSession(ctx context.Context, ini
 
 	case nil:
 		break
+	}
+
+	if err := u.telegramRepo.GetBlockerForSecretMessagingSessionToCache(ctx, model.CreateCacheKeyForBlockedSecretMessagingSessionUser(initiatorID, targetID)); err != nil {
+		logger.Info("user is blocked")
+		return nil, nil, model.UsecaseError{
+			UnderlyingError: ErrForbidden,
+			Message:         "You are blocked by this user, so you can't use secret messaging with him / her",
+		}
 	}
 
 	session := &model.SecretMessagingSession{
@@ -298,6 +309,17 @@ func (u *telegramUsecase) SendSecretMessage(ctx context.Context, sms *model.Secr
 		MessageID:        secretMsg.MessageId,
 		ReplyToMessageID: parentMsgNode.PreviousSecretMessageID,
 		SessionID:        sms.ID,
+		ParseMode:        "html",
+		InlineKeybordButtons: []gotgbot.InlineKeyboardButton{
+			{
+				Text:         "report message",
+				CallbackData: model.GenerateReportSecretMessageCallbackQuery(msgNode.ID),
+			},
+			{
+				Text:         "block user",
+				CallbackData: model.GenerateBlockSecretMessagingUserCallbackQuery(sms.SenderID),
+			},
+		},
 	}
 
 	if err := u.workerClient.RegisterSendingTelegramMessageToUser(ctx, payload); err != nil {
@@ -363,6 +385,7 @@ func (u *telegramUsecase) HandleReplyForSecretMessage(ctx context.Context, sms *
 		MessageID:        replyMsg.MessageId,
 		ReplyToMessageID: parentMsgNode.PreviousSecretMessageID,
 		SessionID:        sms.ID,
+		ParseMode:        "html",
 	}
 
 	if err := u.workerClient.RegisterSendingTelegramMessageToUser(ctx, payload); err != nil {
@@ -438,4 +461,119 @@ func (u *telegramUsecase) CreateSecretMessagingMessageNode(ctx context.Context, 
 	}
 
 	return model.NilUsecaseError
+}
+
+func (u *telegramUsecase) ReportSecretMessage(ctx context.Context, msgID int64) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":   helper.DumpContext(ctx),
+		"msgID": msgID,
+	})
+
+	logger.Info("start reporting secret message")
+
+	msgNode, err := u.telegramRepo.FindSecretMessagingMessageNodeByID(ctx, msgID)
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find secret messaging message node by ID")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		break
+	}
+
+	input := &model.MailingInput{
+		To: []lib.SendSmtpEmailTo{
+			{
+				Email: config.TelegramBotAdminEmailReportTarget(),
+				Name:  "Telegram Bot Admin",
+			},
+		},
+		HTMLContent: helper.HTMLContentForReportSecretMessagingService(msgNode),
+		Subject:     "User Report on Secret Messaging Service",
+	}
+
+	mail, ucErr := u.mailUsecase.Enqueue(ctx, input)
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to enqueue email for report secret messaging service")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgInternalError,
+		}
+
+	case nil:
+		logger.WithField("mail", utils.Dump(mail)).Info("successfully enqueued email for report secret messaging service")
+		return model.NilUsecaseError
+	}
+}
+
+func (u *telegramUsecase) BlockSecretMessagingSession(ctx context.Context, session *model.SecretMessagingSession) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":  helper.DumpContext(ctx),
+		"sess": utils.Dump(session),
+	})
+
+	logger.Info("start blocking secret messaging user")
+
+	err := u.telegramRepo.SetBlockerForSecretMessagingSessionToCache(
+		ctx,
+		model.CreateCacheKeyForBlockedSecretMessagingSessionUser(session.SenderID, session.TargetID),
+		time.Duration(config.TelegramBotDefaultBlockCacheTime())*time.Second,
+	)
+
+	if err != nil {
+		logger.WithError(err).Error("failed to set blocker for secret messaging session to cache")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgInternalError,
+		}
+	}
+
+	if err := u.telegramRepo.BlockSecretMessagingSessionByID(ctx, session.ID); err != nil {
+		logger.WithError(err).Error("failed to block secret messaging session")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+	}
+
+	return model.NilUsecaseError
+}
+
+func (u *telegramUsecase) GetSecretMessagingSession(ctx context.Context, senderID, targetID int64) (*model.SecretMessagingSession, model.UsecaseError) {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":      helper.DumpContext(ctx),
+		"senderID": senderID,
+		"targetID": targetID,
+	})
+
+	logger.Info("start getting secret messaging session")
+
+	session, err := u.telegramRepo.FindSecretMessagingSessionByUserID(ctx, senderID, targetID)
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find secret messaging session by user ID")
+		return nil, model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return nil, model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		return session, model.NilUsecaseError
+	}
 }
