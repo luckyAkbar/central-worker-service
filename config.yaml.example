@@ -88,3 +88,7 @@ telegram_bot:
     drop_pending_update: false
   diary:
     delete_not_found_cache_time: 180
+  report:
+    admin_email_report_target: ""
+    default_report_cache_time: 86400
+    default_blocked_cache_time: 172800
