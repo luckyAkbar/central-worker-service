@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -21,15 +22,17 @@ type telegramUsecase struct {
 	telebot      *gotgbot.Bot
 	workerClient model.WorkerClient
 	mailUsecase  model.MailUsecase
+	memeRepo     model.GagMemeRepository
 }
 
 // NewTelegramUsecase create a new telegram usecase
-func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient, mailUsecase model.MailUsecase) model.TelegramUsecase {
+func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient, mailUsecase model.MailUsecase, memeRepo model.GagMemeRepository) model.TelegramUsecase {
 	return &telegramUsecase{
 		telegramRepo,
 		telebot,
 		workerClient,
 		mailUsecase,
+		memeRepo,
 	}
 }
 
@@ -576,4 +579,103 @@ func (u *telegramUsecase) GetSecretMessagingSession(ctx context.Context, senderI
 	case nil:
 		return session, model.NilUsecaseError
 	}
+}
+
+func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model.Subscription) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx": helper.DumpContext(ctx),
+		"sub": utils.Dump(sub),
+	})
+
+	logger.Info("start handling meme subscription")
+
+	userID, err := strconv.ParseInt(sub.UserReferenceID, 10, 64)
+	if err != nil {
+		logger.WithError(err).Error("failed to parse user ID from user reference ID")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgInternalError,
+		}
+	}
+
+	user, err := u.telegramRepo.FindUserByID(ctx, userID)
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find user by ID")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		break
+	}
+
+	meme, err := u.memeRepo.FindRandomGagMeme(ctx)
+	if err != nil {
+		logger.WithError(err).Error("failed to find random gag meme")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+	}
+
+	chat := &gotgbot.Chat{
+		Id: user.ID,
+	}
+
+	switch meme.Type {
+	default:
+		logger.Error("unknown meme type: ", meme.Type)
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         fmt.Sprintf("unhandled meme type: %s", meme.Type),
+		}
+	case model.GagMemeTypeImage:
+		_, err = u.telebot.SendPhoto(chat.Id, meme.MediaURL, &gotgbot.SendPhotoOpts{
+			AllowSendingWithoutReply: true,
+			Caption:                  meme.GenerateCaptionForSubscription(),
+			ParseMode:                "html",
+		})
+		if err != nil {
+			logger.WithError(err).Error("failed to send meme type photo")
+			return model.UsecaseError{
+				UnderlyingError: ErrInternal,
+				Message:         MsgInternalError,
+			}
+		}
+
+	case model.GagMemeTypeVideo:
+		_, err = u.telebot.SendVideo(chat.Id, meme.MediaURL, &gotgbot.SendVideoOpts{
+			Caption:                  meme.GenerateCaptionForSubscription(),
+			AllowSendingWithoutReply: true,
+			ParseMode:                "html",
+			ReplyMarkup: gotgbot.InlineKeyboardMarkup{
+				InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+					{
+						{
+							Text:         "send me more!",
+							CallbackData: "apa",
+						},
+					},
+				},
+			},
+		})
+
+		if err != nil {
+			logger.WithError(err).Error("failed to send meme type video")
+			return model.UsecaseError{
+				UnderlyingError: ErrInternal,
+				Message:         MsgInternalError,
+			}
+		}
+	}
+
+	return model.NilUsecaseError
 }

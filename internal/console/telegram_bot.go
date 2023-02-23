@@ -72,6 +72,7 @@ func telegramBot(cmd *cobra.Command, args []string) {
 	})
 
 	db.InitializePostgresConn()
+	db.InitializeMemeScraperDBConn()
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:         config.RedisAddr(),
 		Password:     config.RedisPassword(),
@@ -84,6 +85,8 @@ func telegramBot(cmd *cobra.Command, args []string) {
 	teleRepo := repository.NewTelegramRepository(db.PostgresDB, cacher)
 	diaryRepo := repository.NewDiaryRepo(db.PostgresDB)
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
+	subscriptionRepo := repository.NewSubscriptionRepository(db.PostgresDB)
+	memeRepo := repository.NewMemeRepository(db.MemeScraperDB)
 
 	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
 	if err != nil {
@@ -91,10 +94,11 @@ func telegramBot(cmd *cobra.Command, args []string) {
 	}
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
-	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient, mailUsecase)
+	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient, mailUsecase, memeRepo)
 	diaryUsecase := usecase.NewDiaryUsecase(diaryRepo)
+	subscriptionUsecase := usecase.NewSubsriptionUsecase(subscriptionRepo)
 
-	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase, teleRepo, workerClient, diaryUsecase)
+	telebotHandler := telebot.NewTelegramHandler(updater.Dispatcher, teleUsecase, teleRepo, workerClient, diaryUsecase, subscriptionUsecase)
 	telebotHandler.RegisterHandlers()
 
 	err = updater.StartPolling(bot, &ext.PollingOpts{

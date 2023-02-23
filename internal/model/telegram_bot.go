@@ -22,6 +22,7 @@ var (
 	DeleteDiaryPrefix              TelegramCallbackQuery = "delete_diary"
 	ReportSecretMessagePrefix      TelegramCallbackQuery = "report_secret_message"
 	BlockSecretMessagingUserPrefix TelegramCallbackQuery = "block_secret_messaging_user"
+	GagMemeServiceSubscription     TelegramCallbackQuery = "gag_meme_service_subscription"
 )
 
 // GenerateDeleteDiaryCallbackQuery will return callback data for delete diary query

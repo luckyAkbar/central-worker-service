@@ -112,6 +112,8 @@ type TelegramUsecase interface {
 
 	HandleReplyForSecretMessage(ctx context.Context, session *SecretMessagingSession, replyMsg *gotgbot.Message, parentMsgNode *SecretMessageNode) UsecaseError
 
+	HandleMemeSubscription(ctx context.Context, sub *Subscription) UsecaseError
+
 	SentTextMessageToUser(ctx context.Context, userID int64, message string, opts *gotgbot.SendMessageOpts) (*gotgbot.Message, UsecaseError)
 
 	FindSecretMessageNodeByID(ctx context.Context, msgID int64) (*SecretMessageNode, UsecaseError)

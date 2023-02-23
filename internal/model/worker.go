@@ -22,6 +22,7 @@ var (
 	TaskSettingMessageNodeToSecretMessagingSession Task = "task:setting_message_node_to_secret_messaging_session"
 	TaskSendTelegramMessageToUser                  Task = "task:send_telegram_message_to_user"
 	TaskCreatingSecretMessagingMessageNode         Task = "task:creating_secret_message_node"
+	TaskMemeSubscription                           Task = "task:meme_subscription"
 )
 
 // Priority is worker priority
@@ -76,6 +77,11 @@ var (
 		MaxRetry: 100,
 		Timeout:  time.Second * 10,
 	}
+
+	MemeSubscriptionTaskOption = &TaskOption{
+		MaxRetry: config.MemeSubscriptionMaxRetry(),
+		Timeout:  config.MemeSubscriptionTimeoutSeconds(),
+	}
 )
 
 // SettingMessageNodeToSecretMessagingSessionPayload payload
@@ -115,6 +121,7 @@ type TaskHandler interface {
 	HandleSettingMessageNodeToSecretMessagingSessionTask(ctx context.Context, task *asynq.Task) error
 	HandleSendTelegramMessageToUserTask(ctx context.Context, task *asynq.Task) error
 	HandleCreateSecretMessagingMessageNode(ctx context.Context, task *asynq.Task) error
+	HandleMemeSubscriptionTask(ctx context.Context, task *asynq.Task) error
 }
 
 // WorkerServer interface for worker server

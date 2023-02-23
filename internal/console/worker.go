@@ -28,6 +28,7 @@ func init() {
 
 func runWorker(_ *cobra.Command, _ []string) {
 	db.InitializePostgresConn()
+	db.InitializeMemeScraperDBConn()
 
 	sibConfig := sendinblue.NewConfiguration()
 	sibConfig.AddDefaultHeader("api-key", config.SendinblueAPIKey())
@@ -56,12 +57,15 @@ func runWorker(_ *cobra.Command, _ []string) {
 	userRepo := repository.NewUserRepository(db.PostgresDB)
 	siakadRepo := repository.NewSiakadRepository(db.PostgresDB, cacher)
 	telegramRepo := repository.NewTelegramRepository(db.PostgresDB, cacher)
+	subscriptionRepo := repository.NewSubscriptionRepository(db.PostgresDB)
+	memeRepo := repository.NewMemeRepository(db.MemeScraperDB)
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
 
-	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient, mailUsecase)
+	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient, mailUsecase, memeRepo)
+	subscriptionUsecase := usecase.NewSubsriptionUsecase(subscriptionRepo)
 
-	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo, telegramUsecase)
+	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo, telegramUsecase, subscriptionUsecase)
 
 	wrk, err := worker.NewServer(config.WorkerBrokerRedisHost(), taskHandler)
 	if err != nil {

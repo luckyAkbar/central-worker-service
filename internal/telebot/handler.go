@@ -21,21 +21,23 @@ To start secret messaging feature, all you have to do is type <strong>/secret [u
 `
 
 type handler struct {
-	dispatcher   *ext.Dispatcher
-	teleUsecase  model.TelegramUsecase
-	telegramRepo model.TelegramRepository
-	workerClient model.WorkerClient
-	diaryUsecase model.DiaryUsecase
+	dispatcher          *ext.Dispatcher
+	teleUsecase         model.TelegramUsecase
+	telegramRepo        model.TelegramRepository
+	workerClient        model.WorkerClient
+	diaryUsecase        model.DiaryUsecase
+	subscriptionUsecase model.SubscriptionUsecase
 }
 
 // NewTelegramHandler create new telegram handler
-func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient, diaryUsecase model.DiaryUsecase) model.TelegramBot {
+func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient, diaryUsecase model.DiaryUsecase, subscriptionUsecase model.SubscriptionUsecase) model.TelegramBot {
 	return &handler{
 		dispatcher,
 		teleUsecase,
 		telegramRepo,
 		workerClient,
 		diaryUsecase,
+		subscriptionUsecase,
 	}
 }
 
@@ -45,8 +47,11 @@ func (h *handler) RegisterHandlers() {
 	h.dispatcher.AddHandler(handlers.NewCommand("secret", h.initiateSecretMessagingHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("diary", h.createDiaryCommandHandler))
 	h.dispatcher.AddHandler(handlers.NewCommand("find-diary", h.findDiaryCommandHandler))
+	h.dispatcher.AddHandler(handlers.NewCommand("subscription", h.subscriptionHandler))
 
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.RegisterSecretMessagingService)), h.registerSecretTelegramMessagingCallbackHandler))
+	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.GagMemeServiceSubscription)), h.gagMemeSubscriptionHandler))
+
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.DeleteDiaryPrefix)), h.handleDeleteDiaryByID))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.ReportSecretMessagePrefix)), h.handleReportSecretMessage))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.BlockSecretMessagingUserPrefix)), h.handleBlockSecretMessagingUser))

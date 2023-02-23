@@ -14,6 +14,9 @@ import (
 var (
 	// PostgresDB postgres database connection
 	PostgresDB *gorm.DB
+
+	// MemeScraperDB postgres database connection for meme scraper database
+	MemeScraperDB *gorm.DB
 )
 
 // InitializePostgresConn initialize postgres connection
@@ -37,6 +40,29 @@ func InitializePostgresConn() {
 	}
 
 	logrus.Info("Connected to Postgres Database")
+}
+
+// InitializeMemeScraperDBConn initialize postgres connection to meme scraper database
+// call os.Exit(1) if error accoured
+func InitializeMemeScraperDBConn() {
+	conn, err := initPostgresConn(config.MemeScraperDSN())
+	if err != nil {
+		logrus.Error("failed to connect to postgres database. reason: ", err.Error())
+		os.Exit(1)
+	}
+
+	MemeScraperDB = conn
+
+	switch config.LogLevel() {
+	case "error":
+		PostgresDB.Logger = PostgresDB.Logger.LogMode(gormLogger.Error)
+	case "warn":
+		PostgresDB.Logger = PostgresDB.Logger.LogMode(gormLogger.Warn)
+	default:
+		PostgresDB.Logger = PostgresDB.Logger.LogMode(gormLogger.Info)
+	}
+
+	logrus.Info("Connected to Meme Scraper Postgres Database")
 }
 
 func initPostgresConn(dsn string) (*gorm.DB, error) {

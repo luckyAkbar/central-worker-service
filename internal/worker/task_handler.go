@@ -25,23 +25,25 @@ import (
 )
 
 type taskHandler struct {
-	mailUtility     model.MailUtility
-	workerClient    model.WorkerClient
-	mailRepo        model.MailRepository
-	userRepo        model.UserRepository
-	siakadRepo      model.SiakaduRepository
-	telegramUsecase model.TelegramUsecase
+	mailUtility         model.MailUtility
+	workerClient        model.WorkerClient
+	mailRepo            model.MailRepository
+	userRepo            model.UserRepository
+	siakadRepo          model.SiakaduRepository
+	telegramUsecase     model.TelegramUsecase
+	subscriptionUsecase model.SubscriptionUsecase
 }
 
 // NewTaskHandler creates a new task handler
-func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient, userRepo model.UserRepository, siakadRepo model.SiakaduRepository, telegramUsecase model.TelegramUsecase) model.TaskHandler {
+func NewTaskHandler(mailUtility model.MailUtility, mailRepo model.MailRepository, workerClient model.WorkerClient, userRepo model.UserRepository, siakadRepo model.SiakaduRepository, telegramUsecase model.TelegramUsecase, subscriptionUsecase model.SubscriptionUsecase) model.TaskHandler {
 	return &taskHandler{
-		mailUtility:     mailUtility,
-		mailRepo:        mailRepo,
-		workerClient:    workerClient,
-		userRepo:        userRepo,
-		siakadRepo:      siakadRepo,
-		telegramUsecase: telegramUsecase,
+		mailUtility:         mailUtility,
+		mailRepo:            mailRepo,
+		workerClient:        workerClient,
+		userRepo:            userRepo,
+		siakadRepo:          siakadRepo,
+		telegramUsecase:     telegramUsecase,
+		subscriptionUsecase: subscriptionUsecase,
 	}
 }
 
@@ -367,4 +369,53 @@ func (th *taskHandler) HandleCreateSecretMessagingMessageNode(ctx context.Contex
 	}
 
 	return nil
+}
+
+func (th *taskHandler) HandleMemeSubscriptionTask(ctx context.Context, t *asynq.Task) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":  helper.DumpContext(ctx),
+		"type": t.Type(),
+	})
+
+	logger.Info("start handling meme subscription task")
+
+	offset := 0
+
+	for {
+		subs, ucErr := th.subscriptionUsecase.FindSubscriptions(ctx, config.MemeSubscriptionProcessingLimit(), offset)
+		switch ucErr.UnderlyingError {
+		default:
+			logger.WithError(ucErr.UnderlyingError).Error("failed to find subscriptions")
+			return ucErr.UnderlyingError
+
+		case usecase.ErrNotFound:
+			logger.Info("no more subscriptions to process")
+			return nil
+
+		case nil:
+			offset += len(subs)
+		}
+
+		for _, sub := range subs {
+			logger.Info("start processing subscription: ", utils.Dump(sub))
+
+			switch sub.Channel {
+			default:
+				logger.WithField("channel", sub.Channel).Error("unknown subscription channel")
+				continue
+
+			case model.SubscriptionChannelTelegram:
+				failCount := 0
+			SEND_MEME:
+				ucErr := th.telegramUsecase.HandleMemeSubscription(ctx, &sub)
+				if ucErr.UnderlyingError != nil && failCount < 10 {
+					logger.WithError(ucErr.UnderlyingError).Error("failed to handle meme subscription")
+					failCount++
+					goto SEND_MEME
+				}
+
+				return ucErr.UnderlyingError
+			}
+		}
+	}
 }

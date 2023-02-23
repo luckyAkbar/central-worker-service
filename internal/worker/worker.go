@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -24,11 +25,13 @@ func registerTask(th model.TaskHandler) {
 	mux.HandleFunc(string(model.TaskSettingMessageNodeToSecretMessagingSession), th.HandleSettingMessageNodeToSecretMessagingSessionTask)
 	mux.HandleFunc(string(model.TaskSendTelegramMessageToUser), th.HandleSendTelegramMessageToUserTask)
 	mux.HandleFunc(string(model.TaskCreatingSecretMessagingMessageNode), th.HandleCreateSecretMessagingMessageNode)
+	mux.HandleFunc(string(model.TaskMemeSubscription), th.HandleMemeSubscriptionTask)
 }
 
 type worker struct {
-	client *asynq.Client
-	server *asynq.Server
+	client    *asynq.Client
+	server    *asynq.Server
+	scheduler *asynq.Scheduler
 }
 
 // NewClient create a new worker client
@@ -78,18 +81,46 @@ func NewServer(redisHost string, th model.TaskHandler) (model.WorkerServer, erro
 		},
 	)
 
+	scheduler := asynq.NewScheduler(redisOpts, &asynq.SchedulerOpts{
+		LogLevel: asynq.ErrorLevel,
+		Logger:   logrus.New(),
+		Location: time.UTC,
+		EnqueueErrorHandler: func(task *asynq.Task, opts []asynq.Option, err error) {
+			logrus.WithError(err).Errorf("failed to enqueue task %q", task.Type)
+		},
+	})
+
 	return &worker{
-		client: client,
-		server: server,
+		client:    client,
+		server:    server,
+		scheduler: scheduler,
 	}, nil
 }
 
 // Start start worker server
 func (w *worker) Start() error {
 	logrus.Info("starting worker...")
-	if err := w.server.Run(mux); err != nil {
+
+	if err := w.enqueueMemeSubscriptionTask(); err != nil {
 		logrus.Error(err)
 		return err
+	}
+
+	logrus.Info("success enqueue meme subscription task")
+
+	go func() {
+		if err := w.scheduler.Run(); err != nil {
+			logrus.Error(err)
+
+			os.Exit(1)
+		}
+	}()
+
+	logrus.Info("success running the scheduler")
+
+	if err := w.server.Run(mux); err != nil {
+		logrus.Error(err)
+		os.Exit(1)
 	}
 
 	logrus.Info("worker running...")
@@ -346,6 +377,26 @@ func (w *worker) RegisterCreateSecretMessagingMessageNode(ctx context.Context, n
 	}
 
 	logger.Info("successfully enqueued task: ", utils.Dump(info))
+
+	return nil
+}
+
+func (w *worker) enqueueMemeSubscriptionTask() error {
+	task := asynq.NewTask(
+		string(model.TaskMemeSubscription),
+		nil,
+		asynq.MaxRetry(model.MemeSubscriptionTaskOption.MaxRetry),
+		asynq.Timeout(model.MemeSubscriptionTaskOption.Timeout),
+		asynq.Queue(string(model.PriorityHigh)),
+	)
+
+	entryID, err := w.scheduler.Register(config.MemeSubscriptionCronspec(), task)
+	if err != nil {
+		logrus.Error("failed to enqueue task meme subscription: ", err)
+		return err
+	}
+
+	logrus.Info("success enqueue task meme subscription. entry id: ", entryID)
 
 	return nil
 }

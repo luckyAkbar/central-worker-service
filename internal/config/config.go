@@ -47,6 +47,18 @@ func PostgresDSN() string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", host, user, pw, db, port, sslMode)
 }
 
+// MemeScraperDSN returns postgres DSN
+func MemeScraperDSN() string {
+	host := viper.GetString("meme_scraper_db.host")
+	db := viper.GetString("meme_scraper_db.db")
+	user := viper.GetString("meme_scraper_db.user")
+	pw := viper.GetString("meme_scraper_db.pw")
+	port := viper.GetString("meme_scraper_db.port")
+	sslMode := viper.GetString("meme_scraper_db.ssl_mode")
+
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", host, user, pw, db, port, sslMode)
+}
+
 // SentryDSN returns sentry dsn
 func SentryDSN() string {
 	return viper.GetString("server.log.sentry.dsn")
@@ -208,6 +220,41 @@ func SendTelegramMessageToUserTimeoutSeconds() time.Duration {
 	}
 
 	return time.Second * time.Duration(cfg)
+}
+
+func MemeSubscriptionCronspec() string {
+	return viper.GetString("worker.task.meme_subscription.cronspec")
+}
+
+// MemeSubscriptionMaxRetry max retry
+func MemeSubscriptionMaxRetry() int {
+	cfg := viper.GetInt("worker.task.meme_subscription.max_retry")
+
+	if cfg == 0 {
+		return 1000
+	}
+
+	return cfg
+}
+
+// MemeSubscriptionTimeoutSeconds timeout
+func MemeSubscriptionTimeoutSeconds() time.Duration {
+	cfg := viper.GetInt("worker.task.meme_subscription.timeout_seconds")
+
+	if cfg == 0 {
+		return time.Second * 100
+	}
+
+	return time.Second * time.Duration(cfg)
+}
+
+func MemeSubscriptionProcessingLimit() int {
+	cfg := viper.GetInt("worker.task.meme_subscription.processing_limit")
+	if cfg == 0 {
+		return 100
+	}
+
+	return cfg
 }
 
 // ServerSenderName name for email in sending
