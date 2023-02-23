@@ -414,13 +414,12 @@ func (th *taskHandler) handleMemeSubscriptionOnTelegramChannel(ctx context.Conte
 	maxFailCount := 10
 	for i := 0; i < maxFailCount; i++ {
 		ucErr := th.telegramUsecase.HandleMemeSubscription(ctx, sub)
-		if ucErr.UnderlyingError != nil {
-			logger.WithError(ucErr.UnderlyingError).Error("failed to handle meme subscription")
-			lastErr = ucErr.UnderlyingError
-			continue
+		if ucErr.UnderlyingError == nil {
+			break
 		}
 
-		break
+		logger.WithError(ucErr.UnderlyingError).Error("failed to handle meme subscription")
+		lastErr = ucErr.UnderlyingError
 	}
 
 	return lastErr
