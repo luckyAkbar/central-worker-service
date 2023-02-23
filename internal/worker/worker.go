@@ -86,7 +86,7 @@ func NewServer(redisHost string, th model.TaskHandler) (model.WorkerServer, erro
 		Logger:   logrus.New(),
 		Location: time.UTC,
 		EnqueueErrorHandler: func(task *asynq.Task, opts []asynq.Option, err error) {
-			logrus.WithError(err).Errorf("failed to enqueue task %q", task.Type)
+			logrus.WithError(err).Errorf("failed to enqueue task %s", task.Type())
 		},
 	})
 

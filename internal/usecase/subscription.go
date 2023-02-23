@@ -14,6 +14,7 @@ type subscriptionUsecase struct {
 	repo model.SubscriptionRepository
 }
 
+// NewSubsriptionUsecase will create an object that represent the subscription Usecase interface
 func NewSubsriptionUsecase(repo model.SubscriptionRepository) model.SubscriptionUsecase {
 	return &subscriptionUsecase{
 		repo,

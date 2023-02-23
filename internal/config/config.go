@@ -222,6 +222,7 @@ func SendTelegramMessageToUserTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// MemeSubscriptionCronspec cronspec
 func MemeSubscriptionCronspec() string {
 	return viper.GetString("worker.task.meme_subscription.cronspec")
 }
@@ -248,6 +249,7 @@ func MemeSubscriptionTimeoutSeconds() time.Duration {
 	return time.Second * time.Duration(cfg)
 }
 
+// MemeSubscriptionProcessingLimit processing limit of meme subscription on each iteration
 func MemeSubscriptionProcessingLimit() int {
 	cfg := viper.GetInt("worker.task.meme_subscription.processing_limit")
 	if cfg == 0 {

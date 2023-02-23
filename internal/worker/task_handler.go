@@ -402,20 +402,24 @@ func (th *taskHandler) HandleMemeSubscriptionTask(ctx context.Context, t *asynq.
 			switch sub.Channel {
 			default:
 				logger.WithField("channel", sub.Channel).Error("unknown subscription channel")
-				continue
-
 			case model.SubscriptionChannelTelegram:
-				failCount := 0
-			SEND_MEME:
-				ucErr := th.telegramUsecase.HandleMemeSubscription(ctx, &sub)
-				if ucErr.UnderlyingError != nil && failCount < 10 {
-					logger.WithError(ucErr.UnderlyingError).Error("failed to handle meme subscription")
-					failCount++
-					goto SEND_MEME
-				}
-
-				return ucErr.UnderlyingError
+				return th.handleMemeSubscriptionOnTelegramChannel(ctx, logger, &sub)
 			}
 		}
 	}
+}
+
+func (th *taskHandler) handleMemeSubscriptionOnTelegramChannel(ctx context.Context, logger *logrus.Entry, sub *model.Subscription) error {
+	var lastErr error
+	maxFailCount := 10
+	for i := 0; i < maxFailCount; i++ {
+		ucErr := th.telegramUsecase.HandleMemeSubscription(ctx, sub)
+		if ucErr.UnderlyingError != nil {
+			logger.WithError(ucErr.UnderlyingError).Error("failed to handle meme subscription")
+			lastErr = ucErr.UnderlyingError
+			continue
+		}
+	}
+
+	return lastErr
 }

@@ -13,6 +13,7 @@ type memeRepo struct {
 	db *gorm.DB
 }
 
+// NewMemeRepository will create an object that represent the gag meme Repository interface
 func NewMemeRepository(db *gorm.DB) model.GagMemeRepository {
 	return &memeRepo{
 		db,

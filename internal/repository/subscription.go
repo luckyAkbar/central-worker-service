@@ -14,6 +14,7 @@ type subscriptionRepo struct {
 	db *gorm.DB
 }
 
+// NewSubscriptionRepository will create an object that represent the subscription Repository interface
 func NewSubscriptionRepository(db *gorm.DB) model.SubscriptionRepository {
 	return &subscriptionRepo{
 		db,
