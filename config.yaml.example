@@ -53,6 +53,14 @@ postgres:
   port: "5432"
   ssl_mode: ""
 
+meme_scraper_db:
+  host: ""
+  db: ""
+  user: ""
+  pw: ""
+  port: "5432"
+  ssl_mode: "disable"
+
 redis:
   addr: ""
   password: ""
