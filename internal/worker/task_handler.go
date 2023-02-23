@@ -419,6 +419,8 @@ func (th *taskHandler) handleMemeSubscriptionOnTelegramChannel(ctx context.Conte
 			lastErr = ucErr.UnderlyingError
 			continue
 		}
+
+		break
 	}
 
 	return lastErr
