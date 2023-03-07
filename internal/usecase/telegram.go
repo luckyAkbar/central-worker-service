@@ -658,7 +658,10 @@ func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model
 			ReplyMarkup:              replyMarkup,
 		})
 		if err != nil {
-			logger.WithError(err).Error("failed to send meme type photo")
+			logger.WithFields(logrus.Fields{
+				"meme":     utils.Dump(meme),
+				"teleUser": utils.Dump(user),
+			}).WithError(err).Error("failed to send meme type photo")
 			return model.UsecaseError{
 				UnderlyingError: ErrInternal,
 				Message:         MsgInternalError,

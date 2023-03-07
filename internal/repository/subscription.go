@@ -85,10 +85,13 @@ func (r *subscriptionRepo) Delete(ctx context.Context, id string) error {
 
 	logger.Info("start deleting subscription data")
 
-	if err := r.db.WithContext(ctx).Unscoped().Delete(&model.Subscription{}, id).Error; err != nil {
+	sub := &model.Subscription{}
+	if err := r.db.WithContext(ctx).Unscoped().Where("id = ?", id).Delete(sub).Error; err != nil {
 		logger.WithError(err).Error("failed to delete subscription data")
 		return err
 	}
+
+	logger.Info("Deleted: ", utils.Dump(sub)
 
 	return nil
 }
