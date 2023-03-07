@@ -31,6 +31,7 @@ type SubscriptionUsecase interface {
 	Create(ctx context.Context, subscription *Subscription) UsecaseError
 	FindSubscriptions(ctx context.Context, limit, offset int) ([]Subscription, UsecaseError)
 	FindSubscription(ctx context.Context, subType SubscriptionType, channel SubscriptionChannel, userID string) (*Subscription, UsecaseError)
+	Delete(ctx context.Context, id string) UsecaseError
 }
 
 // SubscriptionRepository is a repository that represent the subscription repository
@@ -38,4 +39,5 @@ type SubscriptionRepository interface {
 	Create(ctx context.Context, subscription *Subscription) error
 	FindSubscriptions(ctx context.Context, limit, offset int) ([]Subscription, error)
 	FindSubscription(ctx context.Context, subType SubscriptionType, channel SubscriptionChannel, userID string) (*Subscription, error)
+	Delete(ctx context.Context, id string) error
 }

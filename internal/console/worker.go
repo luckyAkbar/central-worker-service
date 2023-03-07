@@ -62,7 +62,7 @@ func runWorker(_ *cobra.Command, _ []string) {
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
 
-	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient, mailUsecase, memeRepo)
+	telegramUsecase := usecase.NewTelegramUsecase(telegramRepo, bot, workerClient, mailUsecase, memeRepo, subscriptionRepo)
 	subscriptionUsecase := usecase.NewSubsriptionUsecase(subscriptionRepo)
 
 	taskHandler := worker.NewTaskHandler(mailUtility, mailRepo, workerClient, userRepo, siakadRepo, telegramUsecase, subscriptionUsecase)

@@ -51,6 +51,7 @@ func (h *handler) RegisterHandlers() {
 
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.RegisterSecretMessagingService)), h.registerSecretTelegramMessagingCallbackHandler))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.GagMemeServiceSubscription)), h.gagMemeSubscriptionHandler))
+	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal(string(model.StopGagMemeServiceSubscription)), h.stopGagMemeSubscriptionCallbackHandler))
 
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.DeleteDiaryPrefix)), h.handleDeleteDiaryByID))
 	h.dispatcher.AddHandler(handlers.NewCallback(callbackquery.Prefix(string(model.ReportSecretMessagePrefix)), h.handleReportSecretMessage))

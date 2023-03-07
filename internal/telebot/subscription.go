@@ -130,3 +130,45 @@ func (h *handler) gagMemeSubscriptionHandler(bot *gotgbot.Bot, ctx *ext.Context)
 		},
 	)
 }
+
+func (h *handler) stopGagMemeSubscriptionCallbackHandler(b *gotgbot.Bot, ctx *ext.Context) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"handler": "stopGagMemeSubscription",
+		"user":    utils.Dump(ctx.EffectiveUser),
+	})
+
+	logger.Info("start stop gag meme subscription handler")
+
+	cb := ctx.Update.CallbackQuery
+
+	ucErr := h.teleUsecase.StopMemeSubscription(context.Background(), ctx.EffectiveUser.Id)
+	switch ucErr.UnderlyingError {
+	default:
+		logger.WithError(ucErr.UnderlyingError).Error("failed to stop gag meme subscription")
+		return helper.TelegramCallbackAnswerer(
+			b, cb,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      "Sorry, bot experiencing error. Please try again later",
+				ShowAlert: true,
+			},
+		)
+
+	case usecase.ErrNotFound:
+		return helper.TelegramCallbackAnswerer(
+			b, cb,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      "Sorry, you are not subscribed to any of our subscription services",
+				ShowAlert: true,
+			},
+		)
+
+	case nil:
+		return helper.TelegramCallbackAnswerer(
+			b, cb,
+			&gotgbot.AnswerCallbackQueryOpts{
+				Text:      "You have successfully unsubscribed from Meme subscription",
+				ShowAlert: true,
+			},
+		)
+	}
+}

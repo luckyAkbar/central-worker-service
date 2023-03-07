@@ -79,3 +79,16 @@ func (r *subscriptionRepo) FindSubscription(ctx context.Context, subType model.S
 		return sub, nil
 	}
 }
+
+func (r *subscriptionRepo) Delete(ctx context.Context, id string) error {
+	logger := logrus.WithContext(ctx).WithField("id", id)
+
+	logger.Info("start deleting subscription data")
+
+	if err := r.db.WithContext(ctx).Unscoped().Delete(&model.Subscription{}, id).Error; err != nil {
+		logger.WithError(err).Error("failed to delete subscription data")
+		return err
+	}
+
+	return nil
+}

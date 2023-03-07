@@ -18,21 +18,23 @@ import (
 )
 
 type telegramUsecase struct {
-	telegramRepo model.TelegramRepository
-	telebot      *gotgbot.Bot
-	workerClient model.WorkerClient
-	mailUsecase  model.MailUsecase
-	memeRepo     model.GagMemeRepository
+	telegramRepo     model.TelegramRepository
+	telebot          *gotgbot.Bot
+	workerClient     model.WorkerClient
+	mailUsecase      model.MailUsecase
+	memeRepo         model.GagMemeRepository
+	subscriptionRepo model.SubscriptionRepository
 }
 
 // NewTelegramUsecase create a new telegram usecase
-func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient, mailUsecase model.MailUsecase, memeRepo model.GagMemeRepository) model.TelegramUsecase {
+func NewTelegramUsecase(telegramRepo model.TelegramRepository, telebot *gotgbot.Bot, workerClient model.WorkerClient, mailUsecase model.MailUsecase, memeRepo model.GagMemeRepository, subscriptionRepo model.SubscriptionRepository) model.TelegramUsecase {
 	return &telegramUsecase{
 		telegramRepo,
 		telebot,
 		workerClient,
 		mailUsecase,
 		memeRepo,
+		subscriptionRepo,
 	}
 }
 
@@ -630,6 +632,17 @@ func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model
 		Id: user.ID,
 	}
 
+	replyMarkup := gotgbot.InlineKeyboardMarkup{
+		InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+			{
+				{
+					Text:         "stop subscription",
+					CallbackData: string(model.StopGagMemeServiceSubscription),
+				},
+			},
+		},
+	}
+
 	switch meme.Type {
 	default:
 		logger.Error("unknown meme type: ", meme.Type)
@@ -642,6 +655,7 @@ func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model
 			AllowSendingWithoutReply: true,
 			Caption:                  meme.GenerateCaptionForSubscription(),
 			ParseMode:                "html",
+			ReplyMarkup:              replyMarkup,
 		})
 		if err != nil {
 			logger.WithError(err).Error("failed to send meme type photo")
@@ -656,16 +670,7 @@ func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model
 			Caption:                  meme.GenerateCaptionForSubscription(),
 			AllowSendingWithoutReply: true,
 			ParseMode:                "html",
-			ReplyMarkup: gotgbot.InlineKeyboardMarkup{
-				InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
-					{
-						{
-							Text:         "send me more!",
-							CallbackData: "apa",
-						},
-					},
-				},
-			},
+			ReplyMarkup:              replyMarkup,
 		})
 
 		if err != nil {
@@ -674,6 +679,63 @@ func (u *telegramUsecase) HandleMemeSubscription(ctx context.Context, sub *model
 				UnderlyingError: ErrInternal,
 				Message:         MsgInternalError,
 			}
+		}
+	}
+
+	return model.NilUsecaseError
+}
+
+func (u *telegramUsecase) StopMemeSubscription(ctx context.Context, userID int64) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":    helper.DumpContext(ctx),
+		"userID": userID,
+	})
+
+	logger.Info("start stopping meme subscription")
+
+	user, err := u.telegramRepo.FindUserByID(ctx, userID)
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find user by ID")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		break
+	}
+
+	sub, err := u.subscriptionRepo.FindSubscription(ctx, model.SubscriptionTypeMeme, model.SubscriptionChannelTelegram, fmt.Sprintf("%d", user.ID))
+	switch err {
+	default:
+		logger.WithError(err).Error("failed to find subscription")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+
+	case repository.ErrNotFound:
+		return model.UsecaseError{
+			UnderlyingError: ErrNotFound,
+			Message:         MsgNotFound,
+		}
+
+	case nil:
+		break
+	}
+
+	if err := u.subscriptionRepo.Delete(ctx, sub.ID); err != nil {
+		logger.WithError(err).Error("failed to delete subscription")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
 		}
 	}
 

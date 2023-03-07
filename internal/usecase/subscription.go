@@ -40,6 +40,25 @@ func (u *subscriptionUsecase) Create(ctx context.Context, subs *model.Subscripti
 	return model.NilUsecaseError
 }
 
+func (u *subscriptionUsecase) Delete(ctx context.Context, subID string) model.UsecaseError {
+	logger := logrus.WithFields(logrus.Fields{
+		"ctx":   helper.DumpContext(ctx),
+		"subID": subID,
+	})
+
+	logger.Info("start stopping subscription")
+
+	if err := u.repo.Delete(ctx, subID); err != nil {
+		logger.WithError(err).Error("failed to stop subscription")
+		return model.UsecaseError{
+			UnderlyingError: ErrInternal,
+			Message:         MsgDatabaseError,
+		}
+	}
+
+	return model.NilUsecaseError
+}
+
 func (u *subscriptionUsecase) FindSubscriptions(ctx context.Context, limit, offset int) ([]model.Subscription, model.UsecaseError) {
 	logger := logrus.WithFields(logrus.Fields{
 		"ctx":    helper.DumpContext(ctx),

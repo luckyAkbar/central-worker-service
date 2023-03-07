@@ -123,6 +123,8 @@ type TelegramUsecase interface {
 	FindUserByID(ctx context.Context, id int64) (*TelegramUser, UsecaseError)
 
 	GetSecretMessagingSession(ctx context.Context, senderID, targetID int64) (*SecretMessagingSession, UsecaseError)
+
+	StopMemeSubscription(ctx context.Context, userID int64) UsecaseError
 }
 
 // TelegramRepository telegram repository

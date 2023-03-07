@@ -94,7 +94,7 @@ func telegramBot(cmd *cobra.Command, args []string) {
 	}
 
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
-	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient, mailUsecase, memeRepo)
+	teleUsecase := usecase.NewTelegramUsecase(teleRepo, bot, workerClient, mailUsecase, memeRepo, subscriptionRepo)
 	diaryUsecase := usecase.NewDiaryUsecase(diaryRepo)
 	subscriptionUsecase := usecase.NewSubsriptionUsecase(subscriptionRepo)
 
