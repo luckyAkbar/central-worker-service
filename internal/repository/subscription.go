@@ -91,7 +91,7 @@ func (r *subscriptionRepo) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	logger.Info("Deleted: ", utils.Dump(sub)
+	logger.Info("Deleted: ", utils.Dump(sub))
 
 	return nil
 }
