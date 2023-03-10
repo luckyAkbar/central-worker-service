@@ -3,7 +3,10 @@ version: "3"
 services:
   server:
     container_name: "central_worker_service_server"
-    build: .
+    image: "central_service"
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: "./main server"
     ports:
       - "9095:9095"
@@ -12,22 +15,28 @@ services:
   
   worker:
     container_name: "central_worker_service_worker"
-    build: .
     command: "./main worker"
+    image: "central_service"
+    depends_on:
+      - server
     volumes:
       - /var/local_storage/image/:/var/local_storage/media/image/
 
   telebot:
     container_name: "central_worker_service_telegram_bot"
-    build: .
     command: "./main telegram-bot"
+    image: "central_service"
+    depends_on:
+      - server
     volumes:
       - /var/local_storage/image/:/var/local_storage/media/image/
 
   siakad_scraper:
     container_name: "central_worker_service_siakad_scraper"
-    build: .
     command: "./main siakad-scraper"
+    image: "central_service"
+    depends_on:
+      - server
     volumes:
       - /var/local_storage/image/:/var/local_storage/media/image/
     
