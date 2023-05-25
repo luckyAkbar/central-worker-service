@@ -2,7 +2,6 @@ version: "3"
 
 services:
   server:
-    container_name: "central_worker_service_server"
     image: "central_service"
     build:
       context: .
@@ -14,7 +13,6 @@ services:
       - /var/local_storage/image/:/var/local_storage/media/image/
   
   worker:
-    container_name: "central_worker_service_worker"
     command: "./main worker"
     image: "central_service"
     depends_on:
@@ -23,7 +21,6 @@ services:
       - /var/local_storage/image/:/var/local_storage/media/image/
 
   telebot:
-    container_name: "central_worker_service_telegram_bot"
     command: "./main telegram-bot"
     image: "central_service"
     depends_on:
@@ -32,7 +29,6 @@ services:
       - /var/local_storage/image/:/var/local_storage/media/image/
 
   siakad_scraper:
-    container_name: "central_worker_service_siakad_scraper"
     command: "./main siakad-scraper"
     image: "central_service"
     depends_on:
