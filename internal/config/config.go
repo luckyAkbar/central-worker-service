@@ -498,3 +498,15 @@ func SiakadScraperNPMStartAt() int {
 func SiakadScraperNPMFinishAt() int {
 	return viper.GetInt("siakad.scraping.finish_at")
 }
+
+func YourlsBaseUrl() string {
+	return viper.GetString("yourls.base_url")
+}
+
+func YourlsSignature() string {
+	return viper.GetString("yourls.signature")
+}
+
+func DiaryFrontendBaseURL() string {
+	return viper.GetString("server.diary.frontend_base_url")
+}
