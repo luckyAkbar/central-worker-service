@@ -9,25 +9,30 @@ import (
 type Service struct {
 	apiGroup     *echo.Group
 	authGroup    *echo.Group
+	feGroup      *echo.Group
 	mailUsecase  model.MailUsecase
 	userUsecase  model.UserUsecase
 	authUsecase  model.AuthUsecase
 	imageUsecase model.ImageUsecase
+	diaryUsecase model.DiaryUsecase
 }
 
 // Init init rest service
-func Init(apiGroup *echo.Group, authGroup *echo.Group, mailUsecase model.MailUsecase, userUsecase model.UserUsecase, authUsecase model.AuthUsecase, imageUsecase model.ImageUsecase) {
+func Init(apiGroup, authGroup, feGroup *echo.Group, mailUsecase model.MailUsecase, userUsecase model.UserUsecase, authUsecase model.AuthUsecase, imageUsecase model.ImageUsecase, diaryUsecase model.DiaryUsecase) {
 	s := &Service{
 		apiGroup:     apiGroup,
 		authGroup:    authGroup,
+		feGroup:      feGroup,
 		mailUsecase:  mailUsecase,
 		userUsecase:  userUsecase,
 		authUsecase:  authUsecase,
 		imageUsecase: imageUsecase,
+		diaryUsecase: diaryUsecase,
 	}
 
 	s.initAPIRoutes()
 	s.initAuthRoutes()
+	s.initFrontendRoutes()
 }
 
 func (s *Service) initAuthRoutes() {
@@ -41,4 +46,8 @@ func (s *Service) initAPIRoutes() {
 	s.apiGroup.Use(s.authUsecase.AuthMiddleware(true))
 	s.apiGroup.POST("/email/enqueue/", s.handleEnqueueEmail())
 	s.apiGroup.POST("/media/image/", s.handleUploadImage())
+}
+
+func (s *Service) initFrontendRoutes() {
+	s.feGroup.GET("/diary/", s.handleRenderDiary())
 }

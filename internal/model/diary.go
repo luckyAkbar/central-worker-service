@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // DiarySource is the list of diary source
@@ -41,6 +42,19 @@ func (cdi *CreateDiaryInput) Validate() error {
 	return validator.Struct(cdi)
 }
 
+// DiaryListForFrontend is component for diary accordion
+type DiaryListForFrontend struct {
+	DiaryAccordionHeader string
+	DiaryAccordionBody   string
+}
+
+// DiaryFrontendTemplateData is the data structure representing the template data to render
+// HTML page for diary
+type DiaryFrontendTemplateData struct {
+	LeadText  string
+	DiaryList []DiaryListForFrontend
+}
+
 // Diary is a model for diary
 type Diary struct {
 	ID        string      `json:"id"`
@@ -51,12 +65,35 @@ type Diary struct {
 	Source    DiarySource `json:"source"`
 }
 
+func (d Diary) LenNoteChars() int64 {
+	return int64(utf8.RuneCountInString(d.Note))
+}
+
+type DiaryList []Diary
+
+func (dl DiaryList) ToDiaryFrontendTemplateData(leadText string) DiaryFrontendTemplateData {
+	dlff := []DiaryListForFrontend{}
+	for _, diary := range dl {
+		dlff = append(dlff, DiaryListForFrontend{
+			DiaryAccordionHeader: diary.CreatedAt.Format(time.DateOnly),
+			DiaryAccordionBody:   diary.Note,
+		})
+	}
+
+	return DiaryFrontendTemplateData{
+		LeadText:  leadText,
+		DiaryList: dlff,
+	}
+}
+
 // DiaryUsecase is an interface for usecase layer for diary
 type DiaryUsecase interface {
 	Create(ctx context.Context, input *CreateDiaryInput) (*Diary, UsecaseError)
 	GetDiaryByID(ctx context.Context, diaryID, ownerID string) (*Diary, UsecaseError)
 	GetDiariesByWrittenDateRange(ctx context.Context, start, end time.Time, ownerID string) ([]Diary, UsecaseError)
 	DeleteByID(ctx context.Context, diaryID, ownerID string) UsecaseError
+	PrepareRenderDiariesOnFrontend(ctx context.Context, cmd []string, diaries DiaryList) (string, error)
+	GetDiariesOnFrontendRenderData(ctx context.Context, key string) (*DiaryFrontendTemplateData, error)
 }
 
 // DiaryRepository is an interface for repository layer for diary
@@ -65,4 +102,6 @@ type DiaryRepository interface {
 	FindDiaryByIDAndOwnerID(ctx context.Context, diaryID, ownerID string) (*Diary, error)
 	GetDiariesByWrittenDateRange(ctx context.Context, start, end time.Time, ownerID string) ([]Diary, error)
 	DeleteByID(ctx context.Context, diaryID, ownerID string) error
+	SetFrontendDiaryDataToCache(ctx context.Context, cacheKey string, exp time.Duration, data DiaryFrontendTemplateData) error
+	GetFrontendDiaryDataFromCache(ctx context.Context, key string) (*DiaryFrontendTemplateData, error)
 }

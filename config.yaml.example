@@ -30,6 +30,8 @@ server:
       max_size_bytes: 1048576
       token:
         length: 100
+  diary:
+    frontend_base_url: "http://localhost:9095/frontend/diary"
 
 worker:
   concurrency: 5
@@ -92,3 +94,7 @@ telegram_bot:
     admin_email_report_target: ""
     default_report_cache_time: 86400
     default_blocked_cache_time: 172800
+
+yourls:
+  base_url: ""
+  signature: ""

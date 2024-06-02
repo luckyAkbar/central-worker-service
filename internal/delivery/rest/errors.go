@@ -10,6 +10,7 @@ import (
 var (
 	ErrBadRequest = echo.NewHTTPError(http.StatusBadRequest, "bad request")
 	ErrInternal   = echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	ErrNotFound   = echo.NewHTTPError(http.StatusNotFound, "not found")
 )
 
 func sendError(status int, msg string) *echo.HTTPError {
