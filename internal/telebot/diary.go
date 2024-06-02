@@ -219,15 +219,7 @@ func (h *handler) handleFindDiaryByID(b *gotgbot.Bot, ctx *ext.Context, id strin
 
 	case nil:
 		logger.WithField("found diary: ", utils.Dump(diary)).Info("successfully found diary")
-		return helper.TelegramEffectiveMessageReplier(
-			b,
-			ctx.EffectiveMessage,
-			fmt.Sprintf("found: <strong>%s</strong>", diary.Note),
-			&gotgbot.SendMessageOpts{
-				ReplyToMessageId: ctx.EffectiveMessage.MessageId,
-				ParseMode:        "html",
-			},
-		)
+		return h.safeRenderLongDiary(b, ctx, []string{"id", id}, *diary)
 	}
 }
 
@@ -293,15 +285,7 @@ func (h *handler) handleFindDiaryByDateRange(b *gotgbot.Bot, ctx *ext.Context, s
 		)
 
 	case nil:
-		return helper.TelegramEffectiveMessageReplier(
-			b,
-			ctx.EffectiveMessage,
-			fmt.Sprintf("Diary found: \n%s", helper.FlattenAndFormatDiaries(diaries)),
-			&gotgbot.SendMessageOpts{
-				ReplyToMessageId: ctx.EffectiveMessage.MessageId,
-				ParseMode:        "html",
-			},
-		)
+		return h.safeRenderLongDiary(b, ctx, []string{"range", startDate, endDate}, diaries...)
 	}
 }
 
@@ -354,4 +338,60 @@ func (h *handler) handleDeleteDiaryByID(b *gotgbot.Bot, ctx *ext.Context) error 
 			},
 		)
 	}
+}
+
+func (h *handler) safeRenderLongDiary(b *gotgbot.Bot, ctx *ext.Context, cmd []string, diaries ...model.Diary) error {
+	charLength := int64(0)
+
+	for _, diary := range diaries {
+		charLength += diary.LenNoteChars()
+	}
+
+	if charLength >= MaxMsgCharLength {
+		return h.redirectReadDiaryToFrontend(b, ctx, cmd, diaries...)
+	}
+
+	return helper.TelegramEffectiveMessageReplier(
+		b,
+		ctx.EffectiveMessage,
+		fmt.Sprintf("Diary found: \n%s", helper.FlattenAndFormatDiaries(diaries)),
+		&gotgbot.SendMessageOpts{
+			ReplyToMessageId: ctx.EffectiveMessage.MessageId,
+			ParseMode:        "html",
+		},
+	)
+}
+
+func (h *handler) redirectReadDiaryToFrontend(b *gotgbot.Bot, ctx *ext.Context, cmd []string, diaries ...model.Diary) error {
+	url, err := h.diaryUsecase.PrepareRenderDiariesOnFrontend(context.Background(), cmd, diaries)
+	if err != nil {
+		return helper.TelegramEffectiveMessageReplier(
+			b,
+			ctx.EffectiveMessage,
+			"Sorry, bot experiencing problems. Please try again later",
+			&gotgbot.SendMessageOpts{
+				ReplyToMessageId: ctx.EffectiveMessage.MessageId,
+			},
+		)
+	}
+
+	return helper.TelegramEffectiveMessageReplier(
+		b,
+		ctx.EffectiveMessage,
+		"Sorry, your diaries is too long to be shown here, please click the button to see your diary on the web",
+		&gotgbot.SendMessageOpts{
+			ReplyToMessageId: ctx.EffectiveMessage.MessageId,
+			ParseMode:        "html",
+			ReplyMarkup: gotgbot.InlineKeyboardMarkup{
+				InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+					{
+						gotgbot.InlineKeyboardButton{
+							Text: "See on the Web",
+							Url:  url,
+						},
+					},
+				},
+			},
+		},
+	)
 }

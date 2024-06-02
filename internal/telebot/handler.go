@@ -26,16 +26,18 @@ type handler struct {
 	telegramRepo model.TelegramRepository
 	workerClient model.WorkerClient
 	diaryUsecase model.DiaryUsecase
+	yourls       *helper.YourlsUtil
 }
 
 // NewTelegramHandler create new telegram handler
-func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient, diaryUsecase model.DiaryUsecase) model.TelegramBot {
+func NewTelegramHandler(dispatcher *ext.Dispatcher, teleUsecase model.TelegramUsecase, telegramRepo model.TelegramRepository, workerClient model.WorkerClient, diaryUsecase model.DiaryUsecase, yourls *helper.YourlsUtil) model.TelegramBot {
 	return &handler{
 		dispatcher,
 		teleUsecase,
 		telegramRepo,
 		workerClient,
 		diaryUsecase,
+		yourls,
 	}
 }
 

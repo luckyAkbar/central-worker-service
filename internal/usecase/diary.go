@@ -2,9 +2,13 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/kumparan/go-utils"
+	"github.com/luckyAkbar/central-worker-service/internal/config"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
 	"github.com/luckyAkbar/central-worker-service/internal/repository"
@@ -12,13 +16,15 @@ import (
 )
 
 type diaryUsecase struct {
-	repo model.DiaryRepository
+	repo   model.DiaryRepository
+	yourls *helper.YourlsUtil
 }
 
 // NewDiaryUsecase create diary usecase
-func NewDiaryUsecase(repo model.DiaryRepository) model.DiaryUsecase {
+func NewDiaryUsecase(repo model.DiaryRepository, yourls *helper.YourlsUtil) model.DiaryUsecase {
 	return &diaryUsecase{
 		repo,
+		yourls,
 	}
 }
 
@@ -186,4 +192,62 @@ func (u *diaryUsecase) DeleteByID(ctx context.Context, diaryID, ownerID string) 
 	}
 
 	return model.NilUsecaseError
+}
+
+func (u *diaryUsecase) PrepareRenderDiariesOnFrontend(ctx context.Context, cmd []string, diaries model.DiaryList) (string, error) {
+	leadText := "basing dulu aja"
+	diaryData := diaries.ToDiaryFrontendTemplateData(leadText)
+	cacheKey := fmt.Sprintf("%s-%s", diaries[0].OwnerID, strings.Join(cmd, "-"))
+	defaultDiaryOnFrontendExpiry := time.Hour * 1
+
+	logger := logrus.WithContext(ctx).WithFields(logrus.Fields{
+		"func":     "diaryUsecase.PrepareRenderDiariesOnFrontend",
+		"cacheKey": cacheKey,
+	})
+
+	err := u.repo.SetFrontendDiaryDataToCache(ctx, cacheKey, defaultDiaryOnFrontendExpiry, diaryData)
+	if err != nil {
+		logger.WithError(err).Error("failed to set frontend diary data to cache")
+		return "", ErrInternal
+	}
+
+	url := fmt.Sprintf("%s?key=%s", config.DiaryFrontendBaseURL(), url.QueryEscape(cacheKey))
+	shortURL, err := u.yourls.Shorten(ctx, &helper.ShortingInput{
+		URL: url,
+	})
+
+	if err != nil {
+		logger.WithError(err).Error("failed to shorten URL, may cause failed to response properly to telegram bot")
+		shortURL = url
+	}
+
+	_, err = u.yourls.SetExpiry(ctx, &helper.ActionSetExpiryInput{
+		ShortURL: shortURL,
+		Expiry:   helper.Clock,
+		AgeMod:   helper.Minutes,
+		Age:      int64(defaultDiaryOnFrontendExpiry.Minutes()),
+	})
+
+	if err != nil {
+		logger.WithError(err).Error("failed to set expiry to short URL, may cause failed to response properly to telegram bot")
+		shortURL = url
+	}
+
+	return shortURL, nil
+}
+
+func (u *diaryUsecase) GetDiariesOnFrontendRenderData(ctx context.Context, key string) (*model.DiaryFrontendTemplateData, error) {
+	res, err := u.repo.GetFrontendDiaryDataFromCache(ctx, key)
+	switch err {
+	default:
+		logrus.WithContext(ctx).WithFields(logrus.Fields{
+			"func":     "diaryUsecase.GetDiariesOnFrontendRenderData",
+			"cacheKey": key,
+		}).WithError(err).Error("failed to get frontend diary data from cache")
+		return nil, ErrInternal
+	case repository.ErrNotFound:
+		return nil, ErrNotFound
+	case nil:
+		return res, nil
+	}
 }

@@ -3,8 +3,10 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/kumparan/go-utils"
 	"github.com/luckyAkbar/central-worker-service/internal/helper"
 	"github.com/luckyAkbar/central-worker-service/internal/model"
@@ -13,13 +15,15 @@ import (
 )
 
 type diaryRepo struct {
-	db *gorm.DB
+	db     *gorm.DB
+	cacher model.Cacher
 }
 
 // NewDiaryRepo create a new diary repository
-func NewDiaryRepo(db *gorm.DB) model.DiaryRepository {
+func NewDiaryRepo(db *gorm.DB, cacher model.Cacher) model.DiaryRepository {
 	return &diaryRepo{
 		db,
+		cacher,
 	}
 }
 
@@ -108,4 +112,36 @@ func (r *diaryRepo) DeleteByID(ctx context.Context, diaryID, ownerID string) err
 	logger.Info("deleted diary: ", utils.Dump(deletedDiary))
 
 	return nil
+}
+
+func (r *diaryRepo) SetFrontendDiaryDataToCache(ctx context.Context, cacheKey string, exp time.Duration, data model.DiaryFrontendTemplateData) error {
+	val, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	if err := r.cacher.Set(ctx, cacheKey, string(val), exp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *diaryRepo) GetFrontendDiaryDataFromCache(ctx context.Context, key string) (*model.DiaryFrontendTemplateData, error) {
+	res, err := r.cacher.Get(ctx, key)
+	switch err {
+	default:
+		return nil, err
+	case redis.Nil:
+		return nil, ErrNotFound
+	case nil:
+		break
+	}
+
+	data := model.DiaryFrontendTemplateData{}
+	if err := json.Unmarshal([]byte(res), &data); err != nil {
+		return nil, err
+	}
+
+	return &data, nil
 }

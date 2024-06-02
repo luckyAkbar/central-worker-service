@@ -2,7 +2,9 @@ package console
 
 import (
 	"log"
+	"net/http"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/luckyAkbar/central-worker-service/internal/config"
@@ -39,20 +41,33 @@ func server(c *cobra.Command, args []string) {
 
 	defer helper.WrapCloser(sqlDB.Close)
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:         config.RedisAddr(),
+		Password:     config.RedisPassword(),
+		DB:           config.RedisCacheDB(),
+		MinIdleConns: config.RedisMinIdleConn(),
+		MaxIdleConns: config.RedisMaxIdleConn(),
+	})
+	cacher := db.NewCacher(redisClient)
+
 	mailRepo := repository.NewMailRepository(db.PostgresDB)
 	userRepo := repository.NewUserRepository(db.PostgresDB)
 	sessionRepo := repository.NewSessionRepository(db.PostgresDB)
 	imageRepo := repository.NewImageRepository(db.PostgresDB)
+	diaryRepo := repository.NewDiaryRepo(db.PostgresDB, cacher)
 
 	workerClient, err := worker.NewClient(config.WorkerBrokerRedisHost())
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
+	yourlsUtil := helper.NewYourlsUtil(config.YourlsBaseUrl(), config.YourlsSignature(), &http.Client{})
+
 	mailUsecase := usecase.NewMailUsecase(mailRepo, workerClient)
 	userUsecase := usecase.NewUserUsecase(userRepo, mailUsecase, workerClient)
 	authUsecase := usecase.NewAuthUsecase(sessionRepo, userRepo)
 	imageUsecase := usecase.NewImageUsecase(imageRepo)
+	diaryUsecase := usecase.NewDiaryUsecase(diaryRepo, yourlsUtil)
 
 	HTTPServer := echo.New()
 	HTTPServer.Pre(echoMiddleware.AddTrailingSlash())
@@ -77,8 +92,9 @@ func server(c *cobra.Command, args []string) {
 
 	apiGroup := HTTPServer.Group("api")
 	authGroup := HTTPServer.Group("auth")
+	feGroup := HTTPServer.Group("frontend")
 
-	rest.Init(apiGroup, authGroup, mailUsecase, userUsecase, authUsecase, imageUsecase)
+	rest.Init(apiGroup, authGroup, feGroup, mailUsecase, userUsecase, authUsecase, imageUsecase, diaryUsecase)
 
 	logrus.Info("starting the server...")
 	if err := HTTPServer.Start(config.ServerPort()); err != nil {
