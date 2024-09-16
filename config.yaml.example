@@ -1,0 +1,100 @@
+server:
+  env: "development"
+  port: "9095"
+  log:
+    level: "INFO"
+    sentry:
+      #dsn: ""
+  user:
+    min_password_length: 8
+    activation:
+      # don't suffixed with /
+      base_url: ""
+  sender:
+    email: ""
+    name : ""
+  auth:
+    session:
+      access_token_expiry_hour: 48
+      refresh_token_expiry_hour: 144
+      access_token_length: 50
+      refresh_token_length: 100
+  media:
+    image:
+      # dont suffixed with /
+      local_storage: "./local_storage/media/image"
+      allowed_types:
+        - image/png
+        - image/jpeg
+        - image/jpg
+      max_size_bytes: 1048576
+      token:
+        length: 100
+  diary:
+    frontend_base_url: "http://localhost:9095/frontend/diary"
+
+worker:
+  concurrency: 5
+  task:
+    mailing:
+      max_retry: 10,
+      timeout_seconds: 10
+    mail_updating:
+      max_retry: 5
+      timeout_seconds: 10
+
+sendinblue:
+  api_key: ""
+  is_activated: true
+
+postgres:
+  host: ""
+  db: ""
+  user: ""
+  pw: ""
+  port: "5432"
+  ssl_mode: ""
+
+redis:
+  addr: ""
+  password: ""
+  db: 5
+  min: 1
+  max: 5
+  worker_broker_host: ""
+
+mailgun:
+  is_activated: true
+  domain: ""
+  private_api_key: ""
+  public_api_key: ""
+
+newrelic:
+  lisence: ""
+  logging:
+    log_forwarding_enabled: true
+    app_log_enabled: true
+    log_decoration_enabled: true
+  server:
+    app_name: "CENTRAL_WORKER_SERVICE_SERVER"
+  worker:
+    app_name: "CENTRAL_WORKER_SERVICE_WORKER"
+
+
+telegram_bot:
+  token: ""
+  start_link: ""
+  environment:
+    use_test_env: false
+    timeout: 10
+    drop_pending_update: false
+  diary:
+    delete_not_found_cache_time: 180
+  report:
+    admin_email_report_target: ""
+    default_report_cache_time: 86400
+    default_blocked_cache_time: 172800
+
+yourls:
+  base_url: ""
+  signature: ""
